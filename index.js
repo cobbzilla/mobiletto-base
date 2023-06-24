@@ -1,4 +1,7 @@
 const fs = require('fs')
+const { basename, dirname } = require('path')
+const shasum = require('shasum')
+const randomstring = require('randomstring')
 const { Transform } = require('stream')
 const Queue = require('bull')
 
@@ -9,13 +12,10 @@ const {
 
 const redis = require('./util/redis');
 const { getRedis, teardown } = redis
-const { basename, dirname } = require('path')
-const shasum = require('shasum')
-const randomstring = require('randomstring')
 
 const crypt = require('./util/crypt')
-const {DEFAULT_CRYPT_ALGO, normalizeKey, normalizeIV, encrypt, decrypt} = require("./util/crypt")
-const LRU = require('lru-cache')
+const { DEFAULT_CRYPT_ALGO, normalizeKey, normalizeIV, encrypt, decrypt } = require("./util/crypt")
+const { LRUCache } = require('lru-cache')
 
 const DIR_ENT_DIR_SUFFIX = '__.dirent'
 const DIR_ENT_FILE_PREFIX = 'dirent__'
@@ -38,7 +38,7 @@ const READ_FILE_CACHE_SIZE_THRESHOLD = 128 * 1024 // we can cache files of this 
 class AwaitableLRU {
     lru
     constructor(size) {
-        this.lru = new LRU({ max: size })
+        this.lru = new LRUCache({ max: size })
     }
     get = key => Promise.resolve(this.lru.get(key))
     set = (key, value) => Promise.resolve(this.lru.set(key, value))
