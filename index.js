@@ -339,15 +339,23 @@ async function mobiletto (driverPath, key, secret, opts, encryption = null) {
         driver = require(driverPath.includes('/') ? driverPath : `./drivers/${driverPath}/index.js`)
     }
     let client = null
-    let configValue = null
     try {
         client = driver.storageClient(key, secret, opts)
+    } catch (e) {
+        const message = `mobiletto(${driverPath}) error initializing driver: ${e}`;
+        logger.error(message)
+        throw new MobilettoError(message)
+    }
+    let configValue = null
+    try {
         configValue = await client.testConfig()
     } catch (e) {
-        logger.error(`mobiletto(${driverPath}) error setting up driver: ${e}`)
+        const message = `mobiletto(${driverPath}) error testing connection: ${e}`;
+        logger.error(message)
+        throw new MobilettoError(message)
     }
     if (!configValue) {
-        const message = `mobiletto(${driverPath}) error: test API call failed: ${configValue}`
+        const message = `mobiletto(${driverPath}) error: test API call failed`
         logger.error(message)
         throw new MobilettoError(message)
     }
