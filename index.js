@@ -230,7 +230,7 @@ const UTILITY_FUNCTIONS = {
                     }
                     // only continue if we could determine the source size
                     if (srcSize) {
-                        const destMeta = client.safeMetadata(destFullPath)
+                        const destMeta = await client.safeMetadata(destFullPath)
                         if (destMeta && destMeta.size && destMeta.size && destMeta.size === srcSize) {
                             logger.info(`mirror: dest object (${destFullPath}) has same size (${srcSize}) as src object ${sourcePath}, not copying`)
                             return
@@ -240,22 +240,30 @@ const UTILITY_FUNCTIONS = {
                     // write from source -> write to temp file
                     const fd = fs.openSync(tempPath, 'wx', 0o0600)
                     const writer = fs.createWriteStream(tempPath, {fd, flags: 'wx'})
-                    await source.read(obj.name, async (chunk) => {
-                        if (chunk) { writer.write(chunk) }
-                    }, () => {
-                        writer.close((err) => {
-                            if (err) { throw new MobilettoError(`mirror: error closing temp file: ${err}`) }
-                            logger.debug(`mirror: finished writing ${obj.name} to temp file ${tempPath}`)
+                    await new Promise((resolve, reject) => {
+                        source.read(obj.name, async (chunk) => {
+                            if (chunk) { writer.write(chunk) }
+                        }, () => {
+                            writer.close((err) => {
+                                if (err) { throw new MobilettoError(`mirror: error closing temp file: ${err}`) }
+                                logger.debug(`mirror: finished writing ${obj.name} to temp file ${tempPath}`)
+                            })
+                        }).then(async () => {
+                            // read from temp file -> write to mirror
+                            const fd = fs.openSync(tempPath, 'r')
+                            const reader = fs.createReadStream(tempPath, {fd})
+                            logger.debug(`mirror: writing temp file ${tempPath} to destination: ${destFullPath}`)
+                            await client.write(destFullPath, reader)
+                            logger.debug(`mirror: finished writing temp file ${tempPath} to destination: ${destFullPath}`)
+                            results.success++
+                            resolve(destFullPath)
+                        }).catch((e) => {
+                            logger.warn(`mirror: error copying file: ${e}`)
+                            results.errors++
+                            reject(e)
                         })
-                    }).then(async () => {
-                        // read from temp file -> write to mirror
-                        const fd = fs.openSync(tempPath, 'r')
-                        const reader = fs.createReadStream(tempPath, {fd})
-                        logger.debug(`mirror: writing temp file ${tempPath} to destination: ${destFullPath}`)
-                        await client.write(destFullPath, reader)
-                        logger.debug(`mirror: finished writing temp file ${tempPath} to destination: ${destFullPath}`)
                     })
-                    results.success++
+
                 } catch (e) {
                     logger.warn(`mirror: error copying file: ${e}`)
                     results.errors++
