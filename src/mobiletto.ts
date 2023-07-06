@@ -236,20 +236,21 @@ export async function mobiletto(
                 throw new MobilettoError(message);
             }
             const port: number = client.redisConfig.port || parseInt(`${REDIS_PORT}`);
-            META_LOAD_QUEUE = new Queue(META_LOAD_QUEUE_NAME, {
+            const queueOptions = {
                 connection: {
                     host: client.redisConfig.host || REDIS_HOST,
                     port,
                 },
                 prefix: client.redisConfig.prefix + "_" + META_LOAD_QUEUE_NAME,
-            });
+            };
+            META_LOAD_QUEUE = new Queue(META_LOAD_QUEUE_NAME, queueOptions);
 
             const numWorkers = enc.metaWorkers || DEFAULT_META_WORKERS;
             for (let i = 0; i < numWorkers; i++) {
-                META_WORKERS.push(new Worker(META_LOAD_QUEUE_NAME, _singleMeta));
+                META_WORKERS.push(new Worker(META_LOAD_QUEUE_NAME, _singleMeta, queueOptions));
             }
 
-            const queueEvents = new QueueEvents(META_LOAD_QUEUE_NAME);
+            const queueEvents = new QueueEvents(META_LOAD_QUEUE_NAME, queueOptions);
             queueEvents.on("completed", ({ jobId, returnvalue }): void => {
                 logger.info(`${META_LOAD_JOB_NAME} completed job ${jobId} with result: ${returnvalue}`);
                 if (META_HANDLERS[jobId]) {
