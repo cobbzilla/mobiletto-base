@@ -1,5 +1,5 @@
-import { teardown } from "./redis";
-import { MobilettoDriver, MobilettoDriverParameter } from "./types";
+import { teardown } from "./redis.js";
+import { MobilettoDriver, MobilettoDriverParameter } from "./types.js";
 import { logger, MobilettoError } from "mobiletto-common";
 
 export const closeRedis = async () => {

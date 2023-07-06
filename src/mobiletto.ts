@@ -32,10 +32,11 @@ import {
     MobilettoEncryptionSettings,
     DEFAULT_DIR_LEVELS,
     DEFAULT_META_WORKERS,
-} from "./crypt";
-import { ALL_DRIVERS } from "./register";
-import { newCryptGenerator, reader, REDIS_HOST, REDIS_PORT, REDIS_PREFIX, stringGenerator } from "./util";
-import { addCacheFunctions, addUtilityFunctions } from "./functions";
+} from "./crypt.js";
+import { ALL_DRIVERS } from "./register.js";
+import { newCryptGenerator, reader, stringGenerator } from "./util.js";
+import { addCacheFunctions, addUtilityFunctions } from "./functions.js";
+import { REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis";
 
 const DIR_ENT_DIR_SUFFIX = "__.dirent";
 const DIR_ENT_FILE_PREFIX = "dirent__";
@@ -311,6 +312,7 @@ export async function mobiletto(
     const encClient: MobilettoMinimalClient = {
         id: internalIdForDriver(),
         redisConfig: client.redisConfig,
+        testConfig: client.testConfig,
         list: async (
             pth = "",
             optsOrRecursive?: MobilettoListOptions | boolean,

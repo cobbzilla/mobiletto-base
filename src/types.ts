@@ -4,26 +4,6 @@ import { ReadStream } from "fs";
 import fs from "fs";
 import { Readable, Transform } from "stream";
 
-export type MobilettoRedisConfig = {
-    host?: string;
-    port?: number;
-    prefix?: string;
-    enabled?: boolean;
-};
-
-export type MobilettoOptions = {
-    readOnly?: boolean;
-    redisConfig: MobilettoRedisConfig;
-};
-
-export type MobilettoConnectionFunction = (key: string, secret: string, opts: MobilettoOptions) => MobilettoConnection;
-
-export type MobilettoDriver = {
-    storageClient: MobilettoConnectionFunction;
-};
-
-export type MobilettoDriverParameter = MobilettoConnectionFunction | MobilettoDriver;
-
 export type MobilettoMetadata = {
     name: string;
     type: MobilettoEntryType;
@@ -65,6 +45,7 @@ export type MobilettoConflictFunction = (m: MobilettoMinimalClient, s: string) =
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export type MobilettoMinimalClient = MobilettoPatchable & {
+    testConfig: () => unknown;
     list: (
         pth?: string,
         optsOrRecursive?: MobilettoListOptions | boolean,
@@ -81,7 +62,6 @@ export type MobilettoMinimalClient = MobilettoPatchable & {
 };
 
 export type MobilettoConnection = MobilettoMinimalClient & {
-    testConfig: () => unknown;
     safeList: (path?: string, opts?: MobilettoListOptions) => Promise<MobilettoMetadata[]>;
     safeMetadata: (path: string) => Promise<MobilettoMetadata | null>;
     readFile: (path: string) => Promise<Buffer>;
@@ -89,6 +69,30 @@ export type MobilettoConnection = MobilettoMinimalClient & {
     writeFile: (path: string, data: MobilettoWriteSource) => Promise<number>;
     mirror: (source: MobilettoConnection, clientPath: string, sourcePath: string) => Promise<MobilettoMirrorResults>;
 };
+
+export type MobilettoRedisConfig = {
+    host?: string;
+    port?: number;
+    prefix?: string;
+    enabled?: boolean;
+};
+
+export type MobilettoOptions = {
+    readOnly?: boolean;
+    redisConfig: MobilettoRedisConfig;
+};
+
+export type MobilettoConnectionFunction = (
+    key: string,
+    secret?: string,
+    opts?: MobilettoOptions
+) => MobilettoMinimalClient;
+
+export type MobilettoDriver = {
+    storageClient: MobilettoConnectionFunction;
+};
+
+export type MobilettoDriverParameter = MobilettoConnectionFunction | MobilettoDriver;
 
 export type MobilettoClient = MobilettoConnection & {
     id?: string;

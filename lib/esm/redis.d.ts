@@ -1,5 +1,8 @@
 import Redis from "ioredis";
-import { Cacheable, CacheLike } from "./cache";
+import { Cacheable, CacheLike } from "./cache.js";
+export declare const REDIS_HOST: string;
+export declare const REDIS_PORT: string | number;
+export declare const REDIS_PREFIX: string;
 export declare const getRedis: (name: string, host: string, port: number, prefix: string) => MobilettoCache;
 type CacheCounters = {
     get: number;

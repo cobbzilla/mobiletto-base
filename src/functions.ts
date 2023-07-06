@@ -11,14 +11,14 @@ import {
     MobilettoRemoveOptions,
     MobilettoVisitor,
     MobilettoWriteSource,
-} from "./types";
+} from "./types.js";
 import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
 import shasum from "shasum";
 import randomstring from "randomstring";
 import fs from "fs";
-import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache";
-import { getRedis, MobilettoCache } from "./redis";
-import { MOBILETTO_TMP, reader, REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./util";
+import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache.js";
+import { getRedis, MobilettoCache, REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis.js";
+import { MOBILETTO_TMP, reader } from "./util.js";
 
 async function mirrorDir(source: MobilettoConnection, sourcePath: string, visitor: MobilettoVisitor) {
     logger.verbose(`mirrorDir: mirroring dir: ${sourcePath}`);

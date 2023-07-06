@@ -1,10 +1,6 @@
 import crypto from "crypto";
-import { MobilettoByteCounter, MobilettoReadFunc, MobilettoWriteSource } from "./types";
-import { encrypt, MobilettoEncryptionConfig } from "./crypt";
-
-export const REDIS_HOST = process.env.MOBILETTO_REDIS_HOST || "127.0.0.1";
-export const REDIS_PORT = process.env.MOBILETTO_REDIS_PORT || 6379;
-export const REDIS_PREFIX = process.env.MOBILETTO_REDIS_PREFIX || "_mobiletto__";
+import { MobilettoByteCounter, MobilettoReadFunc, MobilettoWriteSource } from "./types.js";
+import { encrypt, MobilettoEncryptionConfig } from "./crypt.js";
 
 export const reader =
     (chunks: Buffer[]) =>
