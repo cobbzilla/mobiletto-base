@@ -1,4 +1,4 @@
-import { LRUCache } from "lru-cache/dist/mjs";
+import { LRUCache } from "lru-cache";
 
 export type Cacheable = string | number | boolean | NonNullable<object>;
 
