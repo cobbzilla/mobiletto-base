@@ -23,6 +23,7 @@ export {
     MobilettoMirrorResults,
     MobilettoMinimalClient,
     MobilettoRedisConfig,
+    MobilettoWriteSource,
 } from "./types.js";
 
 export { encrypt, decrypt } from "./crypt.js";
