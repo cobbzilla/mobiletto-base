@@ -34,7 +34,7 @@ export type MobilettoByteCounter = { count: number };
 export type MobilettoWriteSource = Buffer | string | MobilettoGenerator | ReadStream;
 
 export type MobilettoReadable = fs.ReadStream | Transform | Readable;
-export type MobilettoGenerator = Generator<Buffer | string, void>;
+export type MobilettoGenerator = Generator<Buffer | string, void> | Iterator<Buffer | string>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type MobilettoPatchable = {
