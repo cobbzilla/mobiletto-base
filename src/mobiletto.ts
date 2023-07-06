@@ -496,7 +496,7 @@ export async function mobiletto(
                 await client.write(realPath, newCryptGenerator(readFunc, generatorBytes, cipher));
             }
             // write metadata
-            const meta = { name: path, size: generatorBytes, type: M_FILE };
+            const meta = { name: path, size: generatorBytes.count, type: M_FILE };
             await client.write(metaPath(path), stringGenerator(JSON.stringify(meta), enc)());
             return generatorBytes.count;
         },
