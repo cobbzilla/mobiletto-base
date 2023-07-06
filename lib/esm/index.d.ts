@@ -6,3 +6,5 @@ export { MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
 export { MobilettoVisitor, MobilettoMetadata, MobilettoDriver, MobilettoListOptions, MobilettoRemoveOptions, MobilettoMirrorResults, MobilettoMinimalClient, MobilettoRedisConfig, MobilettoWriteSource, } from "./types.js";
 export { encrypt, decrypt } from "./crypt.js";
 export { mobiletto, MobilettoOptions, MobilettoEncryptionSettings, MobilettoConnection };
+export { registerDriver, closeRedis } from "./register.js";
+export { flushAll } from "./redis.js";

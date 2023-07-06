@@ -28,3 +28,6 @@ export {
 
 export { encrypt, decrypt } from "./crypt.js";
 export { mobiletto, MobilettoOptions, MobilettoEncryptionSettings, MobilettoConnection };
+
+export { registerDriver, closeRedis } from "./register.js";
+export { flushAll } from "./redis.js";
