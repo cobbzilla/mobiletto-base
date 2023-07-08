@@ -206,10 +206,24 @@ export async function mobiletto(
                         const plain = decrypt(cipherText.toString(), enc);
                         const realPath = plain.split(ENC_PAD_SEP)[0];
                         _metadata(client)(realPath)
-                            .then((meta) => resolve(JSON.stringify(meta)))
+                            .then((meta) => {
+                                if (
+                                    job.data.mobilettoJobID &&
+                                    typeof META_HANDLERS[job.data.mobilettoJobID] === "function"
+                                ) {
+                                    META_HANDLERS[job.data.mobilettoJobID](meta);
+                                }
+                                resolve(JSON.stringify(meta));
+                            })
                             .catch((err) => {
                                 const message = `${logPrefix} error fetching _metadata: ${err}`;
                                 logger.warn(message);
+                                if (
+                                    job.data.mobilettoJobID &&
+                                    typeof META_ERR_HANDLERS[job.data.mobilettoJobID] === "function"
+                                ) {
+                                    META_ERR_HANDLERS[job.data.mobilettoJobID](message);
+                                }
                                 reject(message);
                             });
                     }
