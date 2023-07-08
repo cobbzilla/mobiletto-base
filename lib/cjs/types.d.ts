@@ -27,5 +27,5 @@ export type MobilettoClient = MobilettoConnection & {
     driver_write: (path: string, data: MobilettoWriteSource) => Promise<number>;
     driver_metadata: (path: string) => Promise<MobilettoMetadata>;
     driver_remove: (path: string, recursive?: boolean, quiet?: boolean) => Promise<string | string[]>;
-    destroy: () => void;
+    destroy: () => Promise<void>;
 };

@@ -5,7 +5,9 @@ import { ALL_META_WORKERS } from "./mobiletto";
 
 export const shutdownMobiletto = async () => {
     await teardown();
-    ALL_META_WORKERS.forEach((w) => w.close(true));
+    const workerClosePromises: Promise<void>[] = [];
+    ALL_META_WORKERS.forEach((w) => workerClosePromises.push(w.close(true)));
+    await Promise.all(workerClosePromises);
 };
 
 export const ALL_DRIVERS: Record<string, MobilettoDriver> = {};
