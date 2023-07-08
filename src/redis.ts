@@ -194,7 +194,7 @@ export class MobilettoCache implements CacheLike {
         if (!this.redis) {
             return new AwaitableLRU(size && size > 0 ? size : 100);
         }
-        const realKey = (k: string): string => `${name}_${k ? k : ""}`;
+        const realKey = (k: string): string => `:scoped:${name}_${k ? k : ""}`;
         const cache: CacheLike = {
             get: async <T>(key: string): Promise<T | null | undefined> => this.get(realKey(key)),
             set: async (key: string, value: Cacheable) => {
