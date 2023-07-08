@@ -78,7 +78,11 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                     try {
                         const singleFileMeta = await client.driver_metadata(path);
                         if (singleFileMeta) {
-                            results.push(singleFileMeta);
+                            if (recursive && singleFileMeta.type === M_DIR) {
+                                results.push(...(await client.list(singleFileMeta.name, opts)));
+                            } else {
+                                results.push(singleFileMeta);
+                            }
                         }
                     } catch (sfmErrIgnored) {
                         // ignore error, we tried
