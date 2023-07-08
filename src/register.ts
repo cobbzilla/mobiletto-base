@@ -1,9 +1,11 @@
 import { teardown } from "./redis.js";
 import { MobilettoDriver, MobilettoDriverParameter } from "./types.js";
 import { logger, MobilettoError } from "mobiletto-common";
+import { ALL_META_WORKERS } from "./mobiletto";
 
-export const closeRedis = async () => {
+export const shutdownMobiletto = async () => {
     await teardown();
+    ALL_META_WORKERS.forEach((w) => w.close(true));
 };
 
 export const ALL_DRIVERS: Record<string, MobilettoDriver> = {};

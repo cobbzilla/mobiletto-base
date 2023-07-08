@@ -42,6 +42,8 @@ const DIR_ENT_DIR_SUFFIX = "__.dirent";
 const DIR_ENT_FILE_PREFIX = "dirent__";
 const ENC_PAD_SEP = " ~ ";
 
+export const ALL_META_WORKERS: Worker[] = [];
+
 export async function mobiletto(
     driverPath: string,
     key: string,
@@ -90,6 +92,7 @@ export async function mobiletto(
     if (!client.id) {
         client.id = internalIdForDriver();
     }
+    client.queueWorkers = [];
     if (!encryption) {
         logger.info(
             `mobiletto: successfully connected using driver ${driverPath}, returning client (encryption not enabled)`
@@ -239,7 +242,6 @@ export async function mobiletto(
     const META_LOAD_QUEUE_NAME = `/tmp/_/loadMetaQueue_${client.id}_`;
     const META_LOAD_JOB_NAME = `/tmp/_/loadMetaJob_${client.id}_`;
     let META_LOAD_QUEUE: Queue | null = null;
-    const META_WORKERS: Worker[] = [];
     const META_HANDLERS: Record<string, (returnvalue: MobilettoMetadata) => unknown> = {};
     const META_ERR_HANDLERS: Record<string, (failedReason: string) => unknown> = {};
     const metaLoadQueue = () => {
@@ -261,9 +263,9 @@ export async function mobiletto(
 
             const numWorkers = enc.metaWorkers || DEFAULT_META_WORKERS;
             for (let i = 0; i < numWorkers; i++) {
-                META_WORKERS.push(
-                    new Worker(META_LOAD_QUEUE_NAME, async (job) => await _singleMeta(job), queueOptions)
-                );
+                const worker = new Worker(META_LOAD_QUEUE_NAME, async (job) => await _singleMeta(job), queueOptions);
+                ALL_META_WORKERS.push(worker);
+                client.queueWorkers.push(worker);
             }
 
             const queueEvents = new QueueEvents(META_LOAD_QUEUE_NAME, queueOptions);

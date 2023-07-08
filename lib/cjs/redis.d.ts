@@ -20,6 +20,7 @@ export declare class MobilettoCache implements CacheLike {
     counters: CacheCounters;
     printStatsInterval: number;
     constructor(name: string, host?: string, port?: number, prefix?: string);
+    disconnect: () => void;
     stats: () => CacheCounters;
     resetStats: () => void;
     hitRate: () => number;

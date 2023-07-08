@@ -6,6 +6,7 @@ export interface CacheLike {
     get: <T>(key: string) => Promise<T | null | undefined>;
     set: (key: string, value: Cacheable) => Promise<void>;
     flush: () => Promise<void>;
+    disconnect: () => void;
 }
 
 export class AwaitableLRU implements CacheLike {
@@ -21,12 +22,18 @@ export class AwaitableLRU implements CacheLike {
         this.lru.set(key, JSON.stringify(value));
     };
     flush = async (): Promise<void> => Promise.resolve(this.lru.clear());
+    disconnect = () => {
+        /* noop */
+    };
 }
 
 class DisabledCache implements CacheLike {
     get = async <T>(): Promise<T | null | undefined> => undefined;
     set = async (): Promise<void> => undefined;
     flush = async (): Promise<void> => {
+        /* noop */
+    };
+    disconnect = () => {
         /* noop */
     };
 }

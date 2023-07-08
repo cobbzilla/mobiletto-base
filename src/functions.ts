@@ -17,6 +17,7 @@ import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError } from "m
 import shasum from "shasum";
 import randomstring from "randomstring";
 import fs from "fs";
+import { Worker } from "bullmq";
 import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache.js";
 import { getRedis, MobilettoCache, REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis.js";
 import { MOBILETTO_TMP, reader } from "./util.js";
@@ -111,6 +112,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 throw e;
             }
         },
+
     safeList:
         (client: MobilettoMinimalClient) =>
         async (path?: string, opts?: MobilettoListOptions): Promise<MobilettoMetadata[]> => {
@@ -126,6 +128,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 throw e;
             }
         },
+
     metadata:
         (client: MobilettoMinimalClient) =>
         async (path: string): Promise<MobilettoMetadata> => {
@@ -148,6 +151,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             }
             return meta;
         },
+
     safeMetadata:
         (client: MobilettoMinimalClient) =>
         async (path: string): Promise<MobilettoMetadata | null> => {
@@ -160,6 +164,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 throw e;
             }
         },
+
     remove:
         (client: MobilettoMinimalClient) =>
         async (path: string, opts: MobilettoRemoveOptions): Promise<string | string[]> => {
@@ -171,6 +176,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             await client.flush();
             return result;
         },
+
     readFile:
         (client: MobilettoMinimalClient) =>
         async (path: string): Promise<Buffer> => {
@@ -187,6 +193,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             }
             return data;
         },
+
     safeReadFile:
         (client: MobilettoMinimalClient) =>
         async (path: string): Promise<Buffer> => {
@@ -197,6 +204,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 return Buffer.from("");
             }
         },
+
     write:
         (client: MobilettoMinimalClient) =>
         async (path: string, data: MobilettoWriteSource): Promise<number> => {
@@ -211,6 +219,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             logger.debug(`util.write(${p}) wrote ${bytesWritten} bytes`);
             return bytesWritten;
         },
+
     writeFile:
         (client: MobilettoMinimalClient) =>
         async (path: string, data: Buffer | string): Promise<number> => {
@@ -219,6 +228,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             };
             return await client.write(path, readFunc());
         },
+
     mirror:
         (client: MobilettoMinimalClient) =>
         async (source: MobilettoConnection, clientPath = "", sourcePath = ""): Promise<MobilettoMirrorResults> => {
@@ -315,15 +325,25 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             await mirrorDir(source, sourcePath, visitor);
             return results;
         },
+
+    destroy: (client: MobilettoMinimalClient) => () => {
+        const cache = client.getCache();
+        if (cache) {
+            cache.disconnect();
+        }
+        if (client.queueWorkers) {
+            client.queueWorkers.forEach((w: Worker) => w.close(true));
+        }
+    },
 };
 
 const CACHE_FUNCTIONS = {
-    redis: (client: MobilettoMinimalClient) => (): CacheLike => {
+    getCache: (client: MobilettoMinimalClient) => (): CacheLike => {
         if (typeof client.cache !== "undefined") return client.cache;
         const redisConfig = client.redisConfig || {};
         const enabled = redisConfig.enabled !== false;
         if (!enabled) {
-            logger.info(`redis: client.redisConfig.enabled === false, disabling cache`);
+            logger.info(`getCache: client.redisConfig.enabled === false, disabling cache`);
             client.cache = DISABLED_CACHE;
             return client.cache;
         }
@@ -331,7 +351,7 @@ const CACHE_FUNCTIONS = {
         const port = redisConfig.port || parseInt(`${REDIS_PORT}`);
         const prefix = redisConfig.prefix || REDIS_PREFIX;
         if (!client.id) {
-            logger.warn(`redis: all nameless connections will share one cache`);
+            logger.warn(`getCache: client.id not set; all nameless connections will share one cache`);
             client.cache = getRedis("~nameless~", host, port, prefix);
         } else {
             client.cache = getRedis(client.id, host, port, prefix);
@@ -341,11 +361,11 @@ const CACHE_FUNCTIONS = {
     scopedCache:
         (client: MobilettoMinimalClient) =>
         (cacheName: string, size = 100): CacheLike => {
-            const cache = client.redis();
+            const cache = client.getCache();
             return cache instanceof MobilettoCache ? cache.scopedCache(cacheName, size) : new AwaitableLRU(size);
         },
     flush: (client: MobilettoMinimalClient) => async (): Promise<void> => {
-        await client.redis().flush();
+        await client.getCache().flush();
     },
 };
 

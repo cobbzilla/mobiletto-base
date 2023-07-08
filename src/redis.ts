@@ -71,6 +71,17 @@ export class MobilettoCache implements CacheLike {
         }
     }
 
+    disconnect = () => {
+        try {
+            if (this.redis) {
+                this.redis.disconnect();
+                this.redis = null;
+            }
+        } catch (e) {
+            logger.warn(`disconnect: error disconnecting from redis(${this.name}) ${e}`);
+        }
+    };
+
     stats = () => this.counters;
     resetStats = () => {
         this.counters = Object.assign({}, ZERO_COUNTERS);
@@ -210,6 +221,9 @@ export class MobilettoCache implements CacheLike {
             flush: async (): Promise<void> => {
                 await this.removeMatchingKeys(realKey(""));
             },
+            disconnect: () => {
+                delete this.scopedCaches[name];
+            },
         };
         this.scopedCaches[name] = cache;
         return cache;
@@ -226,14 +240,7 @@ const forAllCaches = async <T>(func: (client: MobilettoCache) => Promise<T>): Pr
 
 export const teardown = async () =>
     await forAllCaches(async (client: MobilettoCache): Promise<undefined> => {
-        try {
-            if (client.redis) {
-                client.redis.disconnect();
-                client.redis = null;
-            }
-        } catch (e) {
-            logger.warn(`teardown: error disconnecting from redis(${client.name}) ${e}`);
-        }
+        client.disconnect();
     });
 
 export const flushAll = async () => await forAllCaches(async (client) => client.flush());
