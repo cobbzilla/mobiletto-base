@@ -9,6 +9,8 @@ import {
     MobilettoRemoveOptions,
     MobilettoVisitor,
     MobilettoWriteSource,
+    MobilettoFeatureFlags,
+    MobilettoFeatureFlagName,
 } from "mobiletto-common";
 import { MobilettoClient, MobilettoConnection } from "./types.js";
 import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
@@ -29,6 +31,18 @@ async function mirrorDir(source: MobilettoConnection, sourcePath: string, visito
         }
     }
 }
+
+export const isFlagEnabled = (
+    client: MobilettoMinimalClient,
+    flag: MobilettoFeatureFlagName,
+    defaultValue?: boolean
+): boolean => {
+    if (client && typeof client.flags === "function") {
+        const flags: MobilettoFeatureFlags = client.flags();
+        return (flags && flags[flag] === true) || defaultValue || false;
+    }
+    return false;
+};
 
 const READ_FILE_CACHE_SIZE_THRESHOLD = 128 * 1024; // we can cache files of this size
 
@@ -57,7 +71,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             try {
                 // noinspection JSUnresolvedFunction
                 const results: MobilettoMetadata[] = await client.driver_list(path, recursive, visitor);
-                if (results.length === 0) {
+                if (results.length === 0 && isFlagEnabled(client, "list_tryMetaIfEmpty")) {
                     // try single meta, is this a file?
                     try {
                         const singleFileMeta = await client.driver_metadata(path);
