@@ -201,7 +201,7 @@ export class MobilettoCache implements CacheLike {
                 if (key && value) {
                     try {
                         const rk = realKey(key);
-                        if (rk) await this.set(rk, JSON.stringify(value));
+                        if (rk) await this.set(rk, value);
                     } catch (e) {
                         logger.warn(`redis(${this.name}) set(${key}) error: ${e}`);
                     }
