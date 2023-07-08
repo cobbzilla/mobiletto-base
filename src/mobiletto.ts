@@ -247,7 +247,9 @@ export async function mobiletto(
 
             const numWorkers = enc.metaWorkers || DEFAULT_META_WORKERS;
             for (let i = 0; i < numWorkers; i++) {
-                META_WORKERS.push(new Worker(META_LOAD_QUEUE_NAME, _singleMeta, queueOptions));
+                META_WORKERS.push(
+                    new Worker(META_LOAD_QUEUE_NAME, async (job) => await _singleMeta(job), queueOptions)
+                );
             }
 
             const queueEvents = new QueueEvents(META_LOAD_QUEUE_NAME, queueOptions);
