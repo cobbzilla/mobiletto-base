@@ -57,6 +57,17 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             try {
                 // noinspection JSUnresolvedFunction
                 const results: MobilettoMetadata[] = await client.driver_list(path, recursive, visitor);
+                if (results.length === 0) {
+                    // try single meta, is this a file?
+                    try {
+                        const singleFileMeta = await client.driver_metadata(path);
+                        if (singleFileMeta) {
+                            results.push(singleFileMeta);
+                        }
+                    } catch (sfmErrIgnored) {
+                        // ignore error, we tried
+                    }
+                }
                 if (cache) {
                     cache.set(path, results).then(
                         () => {
