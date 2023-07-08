@@ -5,7 +5,18 @@ import { ALL_META_WORKERS } from "./mobiletto";
 
 export const shutdownMobiletto = async () => {
     const workerClosePromises: Promise<void>[] = [];
-    ALL_META_WORKERS.forEach((w) => workerClosePromises.push(w.close(true)));
+    ALL_META_WORKERS.forEach((w) =>
+        workerClosePromises.push(
+            new Promise((resolve, reject) => {
+                w.close(true)
+                    .then(() => resolve)
+                    .catch((e) => {
+                        logger.info(`shutdownMobiletto: error closing queue worker: ${e}`);
+                        reject(e);
+                    });
+            })
+        )
+    );
     try {
         const closeResults = await Promise.all(workerClosePromises);
         logger.info(`shutdownMobiletto: closeResults: ${closeResults}`);
