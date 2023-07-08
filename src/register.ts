@@ -4,10 +4,18 @@ import { logger, MobilettoError } from "mobiletto-common";
 import { ALL_META_WORKERS } from "./mobiletto";
 
 export const shutdownMobiletto = async () => {
-    await teardown();
     const workerClosePromises: Promise<void>[] = [];
     ALL_META_WORKERS.forEach((w) => workerClosePromises.push(w.close(true)));
-    await Promise.all(workerClosePromises);
+    try {
+        await Promise.all(workerClosePromises);
+    } catch (e) {
+        logger.warn(`shutdownMobiletto: error cleaning up queue workers: ${e}`);
+    }
+    try {
+        await teardown();
+    } catch (e) {
+        logger.warn(`shutdownMobiletto: error cleaning up cache: ${e}`);
+    }
 };
 
 export const ALL_DRIVERS: Record<string, MobilettoDriver> = {};

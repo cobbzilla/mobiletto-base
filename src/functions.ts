@@ -327,14 +327,14 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
         },
 
     destroy: (client: MobilettoMinimalClient) => async () => {
-        const cache = client.getCache();
-        if (cache) {
-            cache.disconnect();
-        }
         if (client.queueWorkers) {
             const workerClosePromises: Promise<void>[] = [];
             client.queueWorkers.forEach((w: Worker) => workerClosePromises.push(w.close(true)));
             await Promise.all(workerClosePromises);
+        }
+        const cache = client.getCache();
+        if (cache) {
+            cache.disconnect();
         }
     },
 };
