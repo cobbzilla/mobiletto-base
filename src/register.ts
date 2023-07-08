@@ -7,7 +7,8 @@ export const shutdownMobiletto = async () => {
     const workerClosePromises: Promise<void>[] = [];
     ALL_META_WORKERS.forEach((w) => workerClosePromises.push(w.close(true)));
     try {
-        await Promise.all(workerClosePromises);
+        const closeResults = await Promise.all(workerClosePromises);
+        logger.info(`shutdownMobiletto: closeResults: ${closeResults}`);
     } catch (e) {
         logger.warn(`shutdownMobiletto: error cleaning up queue workers: ${e}`);
     }
