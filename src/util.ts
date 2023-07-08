@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { MobilettoByteCounter, MobilettoReadFunc, MobilettoWriteSource } from "./types.js";
+import { MobilettoByteCounter, MobilettoSyncReadFunc, MobilettoWriteSource } from "mobiletto-common";
 import { encrypt, MobilettoEncryptionConfig } from "./crypt.js";
 
 export const reader =
@@ -27,7 +27,7 @@ export const newCryptGenerator = (
     generatorBytes: MobilettoByteCounter,
     cipher: crypto.Cipher
 ) => {
-    return (function* cryptGenerator(plaintextGenerator: MobilettoReadFunc) {
+    return (function* cryptGenerator(plaintextGenerator: MobilettoSyncReadFunc) {
         let chunk = plaintextGenerator.next().value;
         while (chunk) {
             generatorBytes.count += chunk.length;
@@ -35,5 +35,5 @@ export const newCryptGenerator = (
             chunk = plaintextGenerator.next().value;
         }
         yield cipher.final();
-    })(readFunc as MobilettoReadFunc);
+    })(readFunc as MobilettoSyncReadFunc);
 };

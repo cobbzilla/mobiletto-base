@@ -37,18 +37,6 @@ export const normalizeIV = (iv?: string, key?: Buffer | string | null): Buffer |
         ? Buffer.from(sha(key)).subarray(0, 16)
         : null;
 
-// ensure key long enough for security, and is 32 bytes for AES-256
-let KEY: Buffer | null = null;
-export const setDefaultKey = (key: string): void => {
-    KEY = normalizeKey(key);
-};
-
-// ensure IV is 16 bytes for AES-256
-let CRYPTO_IV: Buffer | null = null;
-export const setDefaultIV = (iv: string): void => {
-    CRYPTO_IV = normalizeIV(iv, KEY);
-};
-
 export const getCipher = (enc: MobilettoEncryptionConfig): crypto.Cipher => {
     const algo: string = enc.algo ? enc.algo : DEFAULT_CRYPT_ALGO;
     const iv: BinaryLike | null = enc.iv ? enc.iv : null;

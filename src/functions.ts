@@ -1,8 +1,6 @@
 import {
-    MobilettoClient,
-    MobilettoConflictFunction,
-    MobilettoConnection,
     MobilettoFunctions,
+    MobilettoConflictFunction,
     MobilettoListOptions,
     MobilettoMetadata,
     MobilettoMinimalClient,
@@ -11,7 +9,8 @@ import {
     MobilettoRemoveOptions,
     MobilettoVisitor,
     MobilettoWriteSource,
-} from "./types.js";
+} from "mobiletto-common";
+import { MobilettoClient, MobilettoConnection } from "./types.js";
 import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
 import shasum from "shasum";
 import randomstring from "randomstring";
@@ -240,7 +239,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                             source
                                 .read(
                                     obj.name,
-                                    async (chunk) => {
+                                    async (chunk: Buffer) => {
                                         if (chunk) {
                                             writer.write(chunk);
                                         }
@@ -270,7 +269,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                                     results.success++;
                                     resolve(destFullPath);
                                 })
-                                .catch((e) => {
+                                .catch((e: Error) => {
                                     logger.warn(`mirror: error copying file: ${e}`);
                                     results.errors++;
                                     reject(e);

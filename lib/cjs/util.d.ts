@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import crypto from "crypto";
-import { MobilettoByteCounter, MobilettoWriteSource } from "./types.js";
+import { MobilettoByteCounter, MobilettoWriteSource } from "mobiletto-common";
 import { MobilettoEncryptionConfig } from "./crypt.js";
 export declare const reader: (chunks: Buffer[]) => (chunk: Buffer) => void;
 export declare const MOBILETTO_TMP: string;

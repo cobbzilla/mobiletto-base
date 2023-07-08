@@ -1,65 +1,14 @@
 import { CacheLike } from "./cache";
-import { MobilettoEntryType } from "mobiletto-common";
-import { ReadStream } from "fs";
-import fs from "fs";
-import { Readable, Transform } from "stream";
-
-export type MobilettoMetadata = {
-    name: string;
-    type: MobilettoEntryType;
-    size?: number;
-    ctime?: number;
-    mtime?: number;
-};
-
-export type MobilettoVisitor = (meta: MobilettoMetadata) => Promise<unknown>;
-
-export type MobilettoListOptions = {
-    recursive?: boolean;
-    visitor?: MobilettoVisitor;
-};
-
-export type MobilettoRemoveOptions = {
-    recursive?: boolean;
-    quiet?: boolean;
-};
-
-export type MobilettoMirrorResults = {
-    success: number;
-    errors: number;
-};
-
-export type MobilettoReadFunc = { next: () => { value: Buffer } };
-export type MobilettoByteCounter = { count: number };
-export type MobilettoWriteSource = Buffer | string | MobilettoGenerator | ReadStream;
-
-export type MobilettoReadable = fs.ReadStream | Transform | Readable;
-export type MobilettoGenerator = Generator<Buffer | string, void> | Iterator<Buffer | string>;
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export type MobilettoPatchable = {
-    [func: string]: any;
-};
-export type MobilettoFunctions = Record<string, (client: MobilettoMinimalClient) => (...params: any[]) => any>;
-export type MobilettoConflictFunction = (m: MobilettoMinimalClient, s: string) => boolean;
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-export type MobilettoMinimalClient = MobilettoPatchable & {
-    testConfig: () => unknown;
-    list: (
-        pth?: string,
-        optsOrRecursive?: MobilettoListOptions | boolean,
-        visitor?: MobilettoVisitor
-    ) => Promise<MobilettoMetadata[]>;
-    metadata: (path: string) => Promise<MobilettoMetadata>;
-    read: (path: string, callback: (chunk: Buffer) => void, endCallback?: () => void) => Promise<number>;
-    write: (path: string, data: MobilettoWriteSource) => Promise<number>;
-    remove: (
-        path: string,
-        optsOrRecursive?: MobilettoRemoveOptions | boolean,
-        quiet?: boolean
-    ) => Promise<string | string[]>;
-};
+import {
+    MobilettoListOptions,
+    MobilettoMetadata,
+    MobilettoMinimalClient,
+    MobilettoMirrorResults,
+    MobilettoOptions,
+    MobilettoRedisConfig,
+    MobilettoWriteSource,
+    MobilettoVisitor,
+} from "mobiletto-common";
 
 export type MobilettoConnection = MobilettoMinimalClient & {
     safeList: (path?: string, opts?: MobilettoListOptions) => Promise<MobilettoMetadata[]>;
@@ -68,18 +17,6 @@ export type MobilettoConnection = MobilettoMinimalClient & {
     safeReadFile: (path: string) => Promise<Buffer | null>;
     writeFile: (path: string, data: MobilettoWriteSource) => Promise<number>;
     mirror: (source: MobilettoConnection, clientPath: string, sourcePath: string) => Promise<MobilettoMirrorResults>;
-};
-
-export type MobilettoRedisConfig = {
-    host?: string;
-    port?: number;
-    prefix?: string;
-    enabled?: boolean;
-};
-
-export type MobilettoOptions = {
-    readOnly?: boolean;
-    redisConfig: MobilettoRedisConfig;
 };
 
 export type MobilettoConnectionFunction = (

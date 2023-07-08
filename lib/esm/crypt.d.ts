@@ -21,8 +21,6 @@ export type MobilettoEncryptionConfig = {
 };
 export declare const normalizeKey: (k: string) => Buffer | null;
 export declare const normalizeIV: (iv?: string, key?: Buffer | string | null) => Buffer | null;
-export declare const setDefaultKey: (key: string) => void;
-export declare const setDefaultIV: (iv: string) => void;
 export declare const getCipher: (enc: MobilettoEncryptionConfig) => crypto.Cipher;
 export declare const encrypt: (plainText: string, encryption: MobilettoEncryptionConfig, outputEncoding?: BufferEncoding) => string;
 export declare const getDecipher: (enc: MobilettoEncryptionConfig) => crypto.Decipher;

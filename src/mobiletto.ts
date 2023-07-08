@@ -8,7 +8,6 @@ import { Job, Queue, QueueEvents, Worker } from "bullmq";
 import { M_FILE, M_DIR, isReadable, logger, MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
 
 import {
-    MobilettoConnection,
     MobilettoMinimalClient,
     MobilettoListOptions,
     MobilettoMetadata,
@@ -17,9 +16,10 @@ import {
     MobilettoRemoveOptions,
     MobilettoVisitor,
     MobilettoWriteSource,
-    MobilettoClient,
     MobilettoByteCounter,
-} from "./types.js";
+} from "mobiletto-common";
+
+import { MobilettoConnection, MobilettoClient } from "./types.js";
 
 import {
     DEFAULT_CRYPT_ALGO,
@@ -579,4 +579,14 @@ export async function mobiletto(
     };
     logger.info(`mobiletto: successfully connected using driver ${driverPath}, returning client (encryption enabled)`);
     return addUtilityFunctions(addCacheFunctions(encClient), readOnly);
+}
+
+export async function connect(
+    driverPath: string,
+    key: string,
+    secret?: string | null,
+    opts?: MobilettoOptions | null,
+    encryption?: MobilettoEncryptionSettings
+): Promise<MobilettoConnection> {
+    return await mobiletto(driverPath, key, secret, opts, encryption);
 }
