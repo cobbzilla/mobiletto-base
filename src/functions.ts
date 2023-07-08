@@ -332,6 +332,9 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             client.queueWorkers.forEach((w: Worker) => workerClosePromises.push(w.close(true)));
             await Promise.all(workerClosePromises);
         }
+        if (client.queueEvents) {
+            await client.queueEvents.close();
+        }
         const cache = client.getCache();
         if (cache) {
             cache.disconnect();

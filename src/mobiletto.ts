@@ -42,7 +42,8 @@ const DIR_ENT_DIR_SUFFIX = "__.dirent";
 const DIR_ENT_FILE_PREFIX = "dirent__";
 const ENC_PAD_SEP = " ~ ";
 
-export const ALL_META_WORKERS: Worker[] = [];
+export const ALL_WORKERS: Worker[] = [];
+export const ALL_QUEUE_EVENTS: QueueEvents[] = [];
 
 export async function mobiletto(
     driverPath: string,
@@ -264,7 +265,7 @@ export async function mobiletto(
             const numWorkers = enc.metaWorkers || DEFAULT_META_WORKERS;
             for (let i = 0; i < numWorkers; i++) {
                 const worker = new Worker(META_LOAD_QUEUE_NAME, async (job) => await _singleMeta(job), queueOptions);
-                ALL_META_WORKERS.push(worker);
+                ALL_WORKERS.push(worker);
                 client.queueWorkers.push(worker);
             }
 
@@ -281,6 +282,8 @@ export async function mobiletto(
                     META_ERR_HANDLERS[jobId](failedReason);
                 }
             });
+            client.queueEvents = queueEvents;
+            ALL_QUEUE_EVENTS.push(queueEvents);
         }
         return META_LOAD_QUEUE;
     };

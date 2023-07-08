@@ -1,33 +1,14 @@
 import { teardown } from "./redis.js";
 import { MobilettoDriver, MobilettoDriverParameter } from "./types.js";
 import { logger, MobilettoError } from "mobiletto-common";
-import { ALL_META_WORKERS } from "./mobiletto";
+import { ALL_QUEUE_EVENTS, ALL_WORKERS } from "./mobiletto";
 
 export const shutdownMobiletto = async () => {
-    const workerClosePromises: Promise<void>[] = [];
-    ALL_META_WORKERS.forEach((w) =>
-        workerClosePromises.push(
-            new Promise((resolve, reject) => {
-                w.close(true)
-                    .then(() => resolve)
-                    .catch((e) => {
-                        logger.info(`shutdownMobiletto: error closing queue worker: ${e}`);
-                        reject(e);
-                    });
-            })
-        )
-    );
-    try {
-        const closeResults = await Promise.all(workerClosePromises);
-        logger.info(`shutdownMobiletto: closeResults: ${closeResults}`);
-    } catch (e) {
-        logger.warn(`shutdownMobiletto: error cleaning up queue workers: ${e}`);
-    }
-    try {
-        await teardown();
-    } catch (e) {
-        logger.warn(`shutdownMobiletto: error cleaning up cache: ${e}`);
-    }
+    const closePromises: Promise<void>[] = [];
+    ALL_WORKERS.forEach((w) => closePromises.push(w.close(true)));
+    ALL_QUEUE_EVENTS.forEach((qe) => closePromises.push(qe.close()));
+    await Promise.all(closePromises);
+    await teardown();
 };
 
 export const ALL_DRIVERS: Record<string, MobilettoDriver> = {};

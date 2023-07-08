@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { CacheLike } from "./cache";
 import { MobilettoListOptions, MobilettoMetadata, MobilettoMinimalClient, MobilettoMirrorResults, MobilettoOptions, MobilettoRedisConfig, MobilettoWriteSource, MobilettoVisitor } from "mobiletto-common";
-import { Worker } from "bullmq";
+import { QueueEvents, Worker } from "bullmq";
 export type MobilettoConnection = MobilettoMinimalClient & {
     safeList: (path?: string, opts?: MobilettoListOptions) => Promise<MobilettoMetadata[]>;
     safeMetadata: (path: string) => Promise<MobilettoMetadata | null>;
@@ -21,6 +21,7 @@ export type MobilettoClient = MobilettoConnection & {
     cache: CacheLike;
     redis: () => CacheLike;
     queueWorkers: Worker[];
+    queueEvents: QueueEvents;
     scopedCache: (cacheName: string, size?: number) => CacheLike;
     flush: () => Promise<void>;
     driver_list: (path?: string, recursive?: boolean, visitor?: MobilettoVisitor) => Promise<MobilettoMetadata[]>;
