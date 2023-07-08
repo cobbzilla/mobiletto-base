@@ -43,8 +43,11 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             if (cached) {
                 if (Array.isArray(cached)) {
                     return cached;
+                } else if (cached instanceof Error) {
+                    throw cached;
+                } else {
+                    logger.warn(`list(${path}): unrecognized cached value (${cached})`);
                 }
-                throw cached;
             }
             const recursive = opts && opts.recursive ? opts.recursive : false;
             const visitor = opts && opts.visitor ? opts.visitor : undefined;
