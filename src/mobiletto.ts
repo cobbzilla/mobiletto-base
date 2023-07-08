@@ -222,8 +222,8 @@ export async function mobiletto(
         });
     };
 
-    const META_LOAD_QUEUE_NAME = "/_/loadMetaQueue";
-    const META_LOAD_JOB_NAME = "/_/loadMetaJob";
+    const META_LOAD_QUEUE_NAME = `/tmp/_/loadMetaQueue_${client.id}_`;
+    const META_LOAD_JOB_NAME = `/tmp/_/loadMetaJob_${client.id}_`;
     let META_LOAD_QUEUE: Queue | null = null;
     const META_WORKERS: Worker[] = [];
     const META_HANDLERS: Record<string, (returnvalue: MobilettoMetadata) => unknown> = {};
