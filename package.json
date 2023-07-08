@@ -1,6 +1,6 @@
 {
   "name": "mobiletto-base",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "type": "module",
   "description": "A storage layer that presents a uniform interface to Amazon S3, Backblaze B2, local and other storage systems.",
   "keywords": [

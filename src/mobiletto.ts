@@ -19,7 +19,7 @@ import {
     MobilettoByteCounter,
 } from "mobiletto-common";
 
-import { MobilettoConnection, MobilettoClient } from "./types.js";
+import { MobilettoConnection, MobilettoClient, MobilettoQueue } from "./types.js";
 
 import {
     DEFAULT_CRYPT_ALGO,
@@ -42,8 +42,7 @@ const DIR_ENT_DIR_SUFFIX = "__.dirent";
 const DIR_ENT_FILE_PREFIX = "dirent__";
 const ENC_PAD_SEP = " ~ ";
 
-export const ALL_WORKERS: Worker[] = [];
-export const ALL_QUEUE_EVENTS: QueueEvents[] = [];
+export const ALL_MQ: Record<string, MobilettoQueue> = {};
 
 export async function mobiletto(
     driverPath: string,
@@ -240,13 +239,12 @@ export async function mobiletto(
         });
     };
 
-    const META_LOAD_QUEUE_NAME = `/tmp/_/loadMetaQueue_${client.id}_`;
-    const META_LOAD_JOB_NAME = `/tmp/_/loadMetaJob_${client.id}_`;
-    let META_LOAD_QUEUE: Queue | null = null;
+    const queueName = `metaQ_${client.id}`;
+    const jobName = `metaJ_${client.id}`;
     const META_HANDLERS: Record<string, (returnvalue: MobilettoMetadata) => unknown> = {};
     const META_ERR_HANDLERS: Record<string, (failedReason: string) => unknown> = {};
     const metaLoadQueue = () => {
-        if (META_LOAD_QUEUE === null) {
+        if (!client.mq) {
             if (!client.redisConfig) {
                 const message = "metaLoadQueue: redis is required but not enabled";
                 logger.error(message);
@@ -258,34 +256,33 @@ export async function mobiletto(
                     host: client.redisConfig.host || REDIS_HOST,
                     port,
                 },
-                prefix: client.redisConfig.prefix + "_" + META_LOAD_QUEUE_NAME,
+                prefix: client.redisConfig.prefix + "_" + queueName,
             };
-            META_LOAD_QUEUE = new Queue(META_LOAD_QUEUE_NAME, queueOptions);
-
+            const queue = new Queue(queueName, queueOptions);
+            const workers: Worker[] = [];
             const numWorkers = enc.metaWorkers || DEFAULT_META_WORKERS;
             for (let i = 0; i < numWorkers; i++) {
-                const worker = new Worker(META_LOAD_QUEUE_NAME, async (job) => await _singleMeta(job), queueOptions);
-                ALL_WORKERS.push(worker);
-                client.queueWorkers.push(worker);
+                const worker = new Worker(queueName, async (job) => await _singleMeta(job), queueOptions);
+                workers.push(worker);
             }
 
-            const queueEvents = new QueueEvents(META_LOAD_QUEUE_NAME, queueOptions);
-            queueEvents.on("completed", ({ jobId, returnvalue }): void => {
-                logger.info(`${META_LOAD_JOB_NAME} completed job ${jobId} with result: ${returnvalue}`);
+            const events = new QueueEvents(queueName, queueOptions);
+            events.on("completed", ({ jobId, returnvalue }): void => {
+                logger.info(`${jobName} completed job ${jobId} with result: ${returnvalue}`);
                 if (META_HANDLERS[jobId]) {
                     META_HANDLERS[jobId](JSON.parse(returnvalue));
                 }
             });
-            queueEvents.on("failed", ({ jobId, failedReason }): void => {
-                logger.info(`${META_LOAD_JOB_NAME} failed job ${jobId} with result: ${failedReason}`);
+            events.on("failed", ({ jobId, failedReason }): void => {
+                logger.info(`${jobName} failed job ${jobId} with result: ${failedReason}`);
                 if (META_ERR_HANDLERS[jobId]) {
                     META_ERR_HANDLERS[jobId](failedReason);
                 }
             });
-            client.queueEvents = queueEvents;
-            ALL_QUEUE_EVENTS.push(queueEvents);
+            client.mq = { queue, workers, events };
+            ALL_MQ[client.id] = client.mq;
         }
-        return META_LOAD_QUEUE;
+        return client.mq.queue;
     };
 
     const _loadMeta = async (dirent: string, entries: MobilettoMetadata[]) => {
@@ -307,7 +304,7 @@ export async function mobiletto(
         };
         for (const entry of entries) {
             const job = { mobilettoJobID, dirent, entry };
-            await mq.add(META_LOAD_JOB_NAME, job);
+            await mq.add(jobName, job);
         }
         await new Promise((resolve) => waitForFiles(resolve));
         delete META_HANDLERS[mobilettoJobID];

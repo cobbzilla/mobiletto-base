@@ -1,13 +1,23 @@
 import { teardown } from "./redis.js";
 import { MobilettoDriver, MobilettoDriverParameter } from "./types.js";
 import { logger, MobilettoError } from "mobiletto-common";
-import { ALL_QUEUE_EVENTS, ALL_WORKERS } from "./mobiletto";
+import { ALL_MQ } from "./mobiletto";
 
 export const shutdownMobiletto = async () => {
-    const closePromises: Promise<void>[] = [];
-    ALL_WORKERS.forEach((w) => closePromises.push(w.close(true)));
-    ALL_QUEUE_EVENTS.forEach((qe) => closePromises.push(qe.close()));
-    await Promise.all(closePromises);
+    const workerPromises: Promise<void>[] = [];
+    const eventsPromises: Promise<void>[] = [];
+    const queuePromises: Promise<void>[] = [];
+    const clientIds = Object.keys(ALL_MQ);
+    clientIds.forEach((id) => {
+        const mq = ALL_MQ[id];
+        mq.workers.forEach((w) => workerPromises.push(w.close(true)));
+        eventsPromises.push(mq.events.close());
+        queuePromises.push(mq.queue.close());
+        delete ALL_MQ[id];
+    });
+    await Promise.all(workerPromises);
+    await Promise.all(eventsPromises);
+    await Promise.all(queuePromises);
     await teardown();
 };
 

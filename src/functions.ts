@@ -21,6 +21,7 @@ import { Worker } from "bullmq";
 import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache.js";
 import { getRedis, MobilettoCache, REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis.js";
 import { MOBILETTO_TMP, reader } from "./util.js";
+import { ALL_MQ } from "./mobiletto";
 
 async function mirrorDir(source: MobilettoConnection, sourcePath: string, visitor: MobilettoVisitor) {
     logger.verbose(`mirrorDir: mirroring dir: ${sourcePath}`);
@@ -327,13 +328,13 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
         },
 
     destroy: (client: MobilettoMinimalClient) => async () => {
-        if (client.queueWorkers) {
+        if (client.mq) {
             const workerClosePromises: Promise<void>[] = [];
-            client.queueWorkers.forEach((w: Worker) => workerClosePromises.push(w.close(true)));
+            client.mq.workers.forEach((w: Worker) => workerClosePromises.push(w.close(true)));
             await Promise.all(workerClosePromises);
-        }
-        if (client.queueEvents) {
-            await client.queueEvents.close();
+            await client.mq.events.close();
+            await client.mq.queue.close();
+            delete ALL_MQ[client.id];
         }
         const cache = client.getCache();
         if (cache) {
