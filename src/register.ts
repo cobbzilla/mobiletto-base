@@ -1,7 +1,7 @@
 import { teardown } from "./redis.js";
 import { MobilettoDriver, MobilettoDriverParameter } from "./types.js";
 import { logger, MobilettoError } from "mobiletto-common";
-import { ALL_MQ } from "./mobiletto";
+import { ALL_MQ } from "./mobiletto.js";
 
 export const shutdownMobiletto = async () => {
     const workerPromises: Promise<void>[] = [];

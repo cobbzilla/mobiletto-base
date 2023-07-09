@@ -25,7 +25,7 @@ export type MobilettoEncryptionConfig = {
     metaWorkers: number;
 };
 
-const sha = (val: string | Buffer) => shasum(val, "SHA-256");
+const sha = (val: string | Buffer) => shasum(val, "SHA256");
 
 export const normalizeKey = (k: string): Buffer | null =>
     typeof k === "string" && k.trim().length > MIN_KEY_LEN ? Buffer.from(sha(k.trim())).subarray(0, 32) : null;

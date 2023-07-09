@@ -21,7 +21,7 @@ import { Worker } from "bullmq";
 import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache.js";
 import { getRedis, MobilettoCache, REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis.js";
 import { MOBILETTO_TMP, reader } from "./util.js";
-import { ALL_MQ } from "./mobiletto";
+import { ALL_MQ } from "./mobiletto.js";
 
 async function mirrorDir(source: MobilettoConnection, sourcePath: string, visitor: MobilettoVisitor) {
     logger.verbose(`mirrorDir: mirroring dir: ${sourcePath}`);

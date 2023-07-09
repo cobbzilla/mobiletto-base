@@ -1,6 +1,6 @@
 {
   "name": "mobiletto-base",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "type": "module",
   "description": "A storage layer that presents a uniform interface to Amazon S3, Backblaze B2, local and other storage systems.",
   "keywords": [
@@ -23,6 +23,7 @@
   },
   "license": "Apache-2.0",
   "scripts": {
+    "test": "mocha ./test/*.spec.js",
     "tsc": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
     "lint": "npx eslint src",
     "lint:fix": "npm run lint -- --fix",
@@ -35,13 +36,17 @@
     "lib/"
   ],
   "devDependencies": {
+    "@types/chai": "^4.3.5",
+    "@types/mocha": "^10.0.1",
     "@types/node": "^20.3.3",
     "@types/randomstring": "^1.1.8",
     "@types/shasum": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.61.0",
+    "chai": "^4.3.6",
     "eslint": "^8.44.0",
     "eslint-config-prettier": "^8.8.0",
+    "mocha": "^10.2.0",
     "prettier": "^2.8.8",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^5.1.6"

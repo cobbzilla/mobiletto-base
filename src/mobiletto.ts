@@ -36,7 +36,7 @@ import {
 import { ALL_DRIVERS } from "./register.js";
 import { newCryptGenerator, reader, stringGenerator } from "./util.js";
 import { addCacheFunctions, addUtilityFunctions } from "./functions.js";
-import { REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis";
+import { REDIS_HOST, REDIS_PORT, REDIS_PREFIX } from "./redis.js";
 
 const DIR_ENT_DIR_SUFFIX = "__.dirent";
 const DIR_ENT_FILE_PREFIX = "dirent__";
@@ -55,8 +55,12 @@ export async function mobiletto(
     let driver;
     if (ALL_DRIVERS[driverPath]) {
         driver = ALL_DRIVERS[driverPath];
-    } else {
+    } else if (require) {
         driver = require(driverPath.includes("/") ? driverPath : `./drivers/${driverPath}/index.js`);
+    } else {
+        throw new MobilettoError(
+            `mobiletto: error resolving driver (require not supported): ${driverPath} (try an ES import of the driver package)`
+        );
     }
     let client: MobilettoClient;
     try {

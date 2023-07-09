@@ -1,7 +1,7 @@
 import Redis from "ioredis";
 import { logger } from "mobiletto-common";
 
-import { DEFAULT_REDIS_OPTIONS } from "ioredis/built/redis/RedisOptions";
+import { DEFAULT_REDIS_OPTIONS } from "ioredis/built/redis/RedisOptions.js";
 import { AwaitableLRU, Cacheable, CacheLike } from "./cache.js";
 
 export const REDIS_HOST = process.env.MOBILETTO_REDIS_HOST || "127.0.0.1";
