@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { basename, dirname } from "path";
 import shasum from "shasum";
-import * as randomstring from "randomstring";
 import { Transform } from "stream";
 import { Job, Queue, QueueEvents, Worker } from "bullmq";
 
-import { M_FILE, M_DIR, isReadable, logger, MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
+import { M_FILE, M_DIR, isReadable, logger, MobilettoError, MobilettoNotFoundError, rand } from "mobiletto-common";
 
 import {
     MobilettoMinimalClient,
@@ -126,7 +125,7 @@ export async function mobiletto(
         iv,
         algo,
         dirLevels,
-        encPathPadding: () => ENC_PAD_SEP + randomstring.generate(1 + Math.floor(2 * Math.random())),
+        encPathPadding: () => ENC_PAD_SEP + rand(1 + Math.floor(2 * Math.random())),
         metaWorkers,
     };
     function encryptPath(path: string) {
@@ -300,7 +299,7 @@ export async function mobiletto(
             }
         };
 
-        const mobilettoJobID = randomstring.generate(10);
+        const mobilettoJobID = rand(10);
         const mq = metaLoadQueue();
         META_HANDLERS[mobilettoJobID] = (meta: MobilettoMetadata) => files.push(meta);
         META_ERR_HANDLERS[mobilettoJobID] = (failedReason) => {

@@ -13,9 +13,8 @@ import {
     MobilettoFeatureFlagName,
 } from "mobiletto-common";
 import { MobilettoClient, MobilettoConnection } from "./types.js";
-import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError } from "mobiletto-common";
+import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError, rand } from "mobiletto-common";
 import shasum from "shasum";
-import randomstring from "randomstring";
 import fs from "fs";
 import { Worker } from "bullmq";
 import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache.js";
@@ -241,9 +240,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             const visitor = async (obj: MobilettoMetadata) => {
                 if (obj.type && obj.type === M_FILE) {
                     logger.verbose(`mirror: mirroring file: ${obj.name}`);
-                    const tempPath = `${MOBILETTO_TMP}/mobiletto_${shasum(JSON.stringify(obj))}.${randomstring.generate(
-                        10
-                    )}`;
+                    const tempPath = `${MOBILETTO_TMP}/mobiletto_${shasum(JSON.stringify(obj))}.${rand(10)}`;
                     logger.debug(`mirror: writing ${obj.name} to temp file ${tempPath} ...`);
                     const destName = obj.name.startsWith(sourcePath) ? obj.name.substring(sourcePath.length) : obj.name;
                     const destFullPath =
