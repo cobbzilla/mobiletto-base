@@ -18,7 +18,7 @@ import {
     MobilettoByteCounter,
 } from "mobiletto-common";
 
-import { MobilettoConnection, MobilettoClient, MobilettoQueue } from "./types.js";
+import { MobilettoConnection, MobilettoClient, MobilettoQueue, MobilettoDriverParameter } from "./types.js";
 
 import {
     DEFAULT_CRYPT_ALGO,
@@ -44,7 +44,7 @@ const ENC_PAD_SEP = " ~ ";
 export const ALL_MQ: Record<string, MobilettoQueue> = {};
 
 export async function mobiletto(
-    driverPath: string,
+    driverPath: string | MobilettoDriverParameter,
     key: string,
     secret?: string | null,
     opts?: MobilettoOptions | null,
@@ -52,18 +52,28 @@ export async function mobiletto(
 ): Promise<MobilettoConnection> {
     logger.info(`mobiletto: connecting with driver ${driverPath}`);
     let driver;
-    if (ALL_DRIVERS[driverPath]) {
-        driver = ALL_DRIVERS[driverPath];
-    } else if (require) {
-        driver = require(driverPath.includes("/") ? driverPath : `./drivers/${driverPath}/index.js`);
+    if (typeof driverPath === "string") {
+        if (ALL_DRIVERS[driverPath]) {
+            driver = ALL_DRIVERS[driverPath];
+        } else if (require) {
+            driver = require(driverPath.includes("/") ? driverPath : `./drivers/${driverPath}/index.js`);
+        } else {
+            throw new MobilettoError(
+                `mobiletto: error resolving driver (require not supported): ${driverPath} (try an ES import of the driver package)`
+            );
+        }
+    } else if (typeof driverPath === "function") {
+        driver = { storageClient: driverPath };
+    } else if (typeof driverPath === "object" && typeof driverPath.storageClient === "function") {
+        driver = driverPath;
     } else {
         throw new MobilettoError(
-            `mobiletto: error resolving driver (require not supported): ${driverPath} (try an ES import of the driver package)`
+            `mobiletto: expected registered driver name or a MobilettoDriverParameter, received a ${typeof driverPath} with value ${driverPath}`
         );
     }
     let client: MobilettoClient;
     try {
-        client = driver.storageClient(key, secret, opts);
+        client = driver.storageClient(key, secret || undefined, opts || undefined);
     } catch (e) {
         const message = `mobiletto(${driverPath}) error initializing driver: ${e}`;
         logger.error(message);
