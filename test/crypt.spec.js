@@ -1,7 +1,7 @@
 import fs from "fs";
 import { describe, it } from "mocha";
 import { expect } from "chai";
-import * as randomstring from "randomstring";
+import { rand } from "mobiletto-common";
 import * as crypto from "crypto";
 
 import {
@@ -17,12 +17,12 @@ import {
 
 describe("crypto test", () => {
     const enc = {
-        key: normalizeKey(randomstring.generate(32)),
-        iv: normalizeIV(randomstring.generate(16)),
+        key: normalizeKey(rand(32)),
+        iv: normalizeIV(rand(16)),
         algo: DEFAULT_CRYPT_ALGO,
     };
     it("should encrypt and decrypt a data buffer successfully", async () => {
-        const plaintext = randomstring.generate(64 * 1024 + Math.floor(1024 * Math.random()));
+        const plaintext = rand(64 * 1024 + Math.floor(1024 * Math.random()));
         const ciphertext = encrypt(plaintext, enc);
         const decrypted = decrypt(ciphertext, enc);
         expect(decrypted).to.equal(plaintext, "decrypted data did not match plaintext");
