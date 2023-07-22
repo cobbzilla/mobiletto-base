@@ -15,8 +15,8 @@ dependencies:
     specifier: ^10.0.0
     version: 10.0.0
   mobiletto-common:
-    specifier: ^2.0.15
-    version: 2.0.15
+    specifier: ^2.0.17
+    version: 2.0.17
   node-fetch-commonjs:
     specifier: ^3.3.1
     version: 3.3.1
@@ -1222,8 +1222,8 @@ packages:
       brace-expansion: 2.0.1
     dev: false
 
-  /mobiletto-common@2.0.15:
-    resolution: {integrity: sha512-G7YG5XGz61AFRalbOwzIrDdkQetf0RRNxqL+Bq86s1IpXGkmB8ViMylaSETR6nWmjeTo1PV8YX5o+ETSHFZ8Ng==}
+  /mobiletto-common@2.0.17:
+    resolution: {integrity: sha512-vGw8/f5ucTPtuCSIvv4tgqruy0X+0sOt6fBJEUH9Kqk40vdXOjD8eejKx+thlDABehvQdfmJGNRMQKvLHf6Xjg==}
     dependencies:
       winston: 3.10.0
     dev: false
