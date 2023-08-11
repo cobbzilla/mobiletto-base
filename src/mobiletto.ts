@@ -4,7 +4,16 @@ import shasum from "shasum";
 import { Transform } from "stream";
 import { Job, Queue, QueueEvents, Worker } from "bullmq";
 
-import { M_FILE, M_DIR, isReadable, logger, MobilettoError, MobilettoNotFoundError, rand } from "mobiletto-common";
+import {
+    M_FILE,
+    M_DIR,
+    isReadable,
+    logger,
+    MobilettoError,
+    MobilettoNotFoundError,
+    rand,
+    MobilettoFeatureFlags,
+} from "mobiletto-common";
 
 import {
     MobilettoMinimalClient,
@@ -345,6 +354,8 @@ export async function mobiletto(
         id: internalIdForDriver(),
         redisConfig: client.redisConfig,
         testConfig: client.testConfig,
+        info: client.info,
+        flags: client.flags ? client.flags : undefined,
         list: async (
             pth = "",
             optsOrRecursive?: MobilettoListOptions | boolean,
