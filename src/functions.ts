@@ -51,7 +51,11 @@ const READ_FILE_CACHE_SIZE_THRESHOLD = 128 * 1024; // we can cache files of this
 const UTILITY_FUNCTIONS: MobilettoFunctions = {
     list:
         (client: MobilettoMinimalClient) =>
-        async (path?: string, opts?: MobilettoListOptions): Promise<MobilettoMetadata[]> => {
+        async (
+            path?: string,
+            opts?: MobilettoListOptions | boolean,
+            visitor?: MobilettoVisitor
+        ): Promise<MobilettoMetadata[]> => {
             path ||= "";
             const cache = client.scopedCache("list");
             const cached = cache ? await cache.get(path) : null;
@@ -64,8 +68,8 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                     logger.warn(`list(${path}): unrecognized cached value (${cached})`);
                 }
             }
-            const recursive = opts && opts.recursive ? opts.recursive : false;
-            const visitor = opts && opts.visitor ? opts.visitor : undefined;
+            const recursive = opts && (opts === true || (opts.recursive ? opts.recursive : false));
+            visitor = visitor ? visitor : typeof opts === "object" && opts.visitor ? opts.visitor : undefined;
             if (visitor && typeof visitor !== "function") {
                 throw new MobilettoError(`list: visitor is not a function: ${typeof visitor}`);
             }
@@ -115,9 +119,14 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
 
     safeList:
         (client: MobilettoMinimalClient) =>
-        async (path?: string, opts?: MobilettoListOptions): Promise<MobilettoMetadata[]> => {
-            const recursive = opts && opts.recursive ? opts.recursive : false;
-            const visitor = opts && opts.visitor ? opts.visitor : undefined;
+        async (
+            path?: string,
+            opts?: MobilettoListOptions | boolean,
+            visitor?: MobilettoVisitor
+        ): Promise<MobilettoMetadata[]> => {
+            const recursive =
+                (opts && opts === true) || (typeof opts === "object" && opts.recursive ? opts.recursive : false);
+            visitor = visitor ? visitor : typeof opts === "object" && opts.visitor ? opts.visitor : undefined;
             try {
                 // noinspection JSUnresolvedFunction
                 return await client.driver_list(path, recursive, visitor);

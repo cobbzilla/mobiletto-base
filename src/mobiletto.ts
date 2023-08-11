@@ -365,6 +365,11 @@ export async function mobiletto(
             const dirent = direntDir(p);
             let entries: MobilettoMetadata[];
             const recursive = optsOrRecursive === true || (optsOrRecursive && optsOrRecursive.recursive) || false;
+            visitor = visitor
+                ? visitor
+                : typeof optsOrRecursive === "object" && optsOrRecursive.visitor
+                ? optsOrRecursive.visitor
+                : undefined;
             const cacheKey = `${p} ~ ${recursive}`;
             const cache = visitor ? null : client.scopedCache("enc_list");
             const cached: MobilettoMetadata[] | null | undefined = cache && (await cache.get(cacheKey));

@@ -12,7 +12,7 @@ import {
 import { Queue, QueueEvents, Worker } from "bullmq";
 
 export type MobilettoConnection = MobilettoMinimalClient & {
-    safeList: (path?: string, opts?: MobilettoListOptions) => Promise<MobilettoMetadata[]>;
+    safeList: (path?: string, opts?: MobilettoListOptions, visitor?: MobilettoVisitor) => Promise<MobilettoMetadata[]>;
     safeMetadata: (path: string) => Promise<MobilettoMetadata | null>;
     readFile: (path: string) => Promise<Buffer>;
     safeReadFile: (path: string) => Promise<Buffer | null>;
