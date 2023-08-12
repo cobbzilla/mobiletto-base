@@ -115,9 +115,9 @@ export class MobilettoCache implements CacheLike {
 
     get = async <T>(key: string): Promise<T | null | undefined> => {
         this.counters.get++;
-        logger.silly(`redis(${this.name}) get(${key}) starting`);
+        logger.trace(`redis(${this.name}) get(${key}) starting`);
         const val = await this.doRedis((r) => r.get(this.pfx(key)), null);
-        logger.silly(`redis(${this.name}) get(${key}) found value: ${val}`);
+        logger.trace(`redis(${this.name}) get(${key}) found value: ${val}`);
         if (val) {
             this.counters.hit++;
         } else {
@@ -136,9 +136,9 @@ export class MobilettoCache implements CacheLike {
 
     set = async (key: string, val: Cacheable, expirationMillis: number = DEFAULT_EXPIRATION_MILLIS): Promise<void> => {
         this.counters.set++;
-        logger.silly(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) starting`);
+        logger.trace(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) starting`);
         await this.doRedisAsync((r) => r.set(this.pfx(key), JSON.stringify(val), "EX", expirationMillis / 1000));
-        logger.silly(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) finished`);
+        logger.trace(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) finished`);
     };
 
     del = async (key: string): Promise<void> => {
