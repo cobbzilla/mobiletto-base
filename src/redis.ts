@@ -50,11 +50,15 @@ export class MobilettoCache implements CacheLike {
             try {
                 this.redis = new Redis(Object.assign({}, DEFAULT_REDIS_OPTIONS, { host, port }));
             } catch (e) {
-                logger.error(`redis(${name}) error connecting to redis, using fallback LRU for scoped caches: ${e}`);
+                if (logger.isErrorEnabled())
+                    logger.error(
+                        `redis(${name}) error connecting to redis, using fallback LRU for scoped caches: ${e}`
+                    );
                 this.redis = null;
             }
         } else {
-            logger.warn(`redis(${name}) no host or port provided, using fallback LRU for scoped caches`);
+            if (logger.isWarningEnabled())
+                logger.warn(`redis(${name}) no host or port provided, using fallback LRU for scoped caches`);
             this.redis = null;
         }
         this.prefix = prefix;
@@ -62,10 +66,10 @@ export class MobilettoCache implements CacheLike {
             // test connection by flushing
             this.flush()
                 .then(() => {
-                    logger.debug(`redis(${name}) successfully flushed`);
+                    if (logger.isDebugEnabled()) logger.debug(`redis(${name}) successfully flushed`);
                 })
                 .catch((e) => {
-                    logger.warn(`redis(${name}) error flushing: ${e}, disabling redis`);
+                    if (logger.isWarningEnabled()) logger.warn(`redis(${name}) error flushing: ${e}, disabling redis`);
                     this.redis = null;
                 });
         }
@@ -78,7 +82,7 @@ export class MobilettoCache implements CacheLike {
                 this.redis = null;
             }
         } catch (e) {
-            logger.warn(`disconnect: error disconnecting from redis(${this.name}) ${e}`);
+            if (logger.isWarningEnabled()) logger.warn(`disconnect: error disconnecting from redis(${this.name}) ${e}`);
         }
     };
 
@@ -99,7 +103,10 @@ export class MobilettoCache implements CacheLike {
         try {
             return this.redis ? await func(this.redis) : defaultValue;
         } catch (e) {
-            logger.warn(`redis(${this.name}) doRedisAsync(${func}) ${e} (returning default value: ${defaultValue})`);
+            if (logger.isWarningEnabled())
+                logger.warn(
+                    `redis(${this.name}) doRedisAsync(${func}) ${e} (returning default value: ${defaultValue})`
+                );
             return defaultValue;
         }
     };
@@ -108,16 +115,17 @@ export class MobilettoCache implements CacheLike {
         try {
             return this.redis ? func(this.redis) : defaultValue;
         } catch (e) {
-            logger.warn(`redis(${this.name}) doRedis(${func}) ${e} (returning default value: ${defaultValue})`);
+            if (logger.isWarningEnabled())
+                logger.warn(`redis(${this.name}) doRedis(${func}) ${e} (returning default value: ${defaultValue})`);
             return defaultValue;
         }
     };
 
     get = async <T>(key: string): Promise<T | null | undefined> => {
         this.counters.get++;
-        logger.trace(`redis(${this.name}) get(${key}) starting`);
+        if (logger.isTraceEnabled()) logger.trace(`redis(${this.name}) get(${key}) starting`);
         const val = await this.doRedis((r) => r.get(this.pfx(key)), null);
-        logger.trace(`redis(${this.name}) get(${key}) found value: ${val}`);
+        if (logger.isTraceEnabled()) logger.trace(`redis(${this.name}) get(${key}) found value: ${val}`);
         if (val) {
             this.counters.hit++;
         } else {
@@ -129,16 +137,18 @@ export class MobilettoCache implements CacheLike {
             this.counters.get % this.printStatsInterval === 0
         ) {
             const message = `${new Date()}: ${this}`;
-            logger.info(message);
+            if (logger.isInfoEnabled()) logger.info(message);
         }
         return val ? JSON.parse(val) : null;
     };
 
     set = async (key: string, val: Cacheable, expirationMillis: number = DEFAULT_EXPIRATION_MILLIS): Promise<void> => {
         this.counters.set++;
-        logger.trace(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) starting`);
+        if (logger.isTraceEnabled())
+            logger.trace(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) starting`);
         await this.doRedisAsync((r) => r.set(this.pfx(key), JSON.stringify(val), "EX", expirationMillis / 1000));
-        logger.trace(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) finished`);
+        if (logger.isTraceEnabled())
+            logger.trace(`redis(${this.name}) set(${key}, ${val}, ${expirationMillis}) finished`);
     };
 
     del = async (key: string): Promise<void> => {
@@ -214,7 +224,7 @@ export class MobilettoCache implements CacheLike {
                         const rk = realKey(key);
                         if (rk) await this.set(rk, value);
                     } catch (e) {
-                        logger.warn(`redis(${this.name}) set(${key}) error: ${e}`);
+                        if (logger.isWarningEnabled()) logger.warn(`redis(${this.name}) set(${key}) error: ${e}`);
                     }
                 }
             },

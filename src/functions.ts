@@ -23,7 +23,7 @@ import { MOBILETTO_TMP, reader } from "./util.js";
 import { ALL_MQ } from "./mobiletto.js";
 
 async function mirrorDir(source: MobilettoConnection, sourcePath: string, visitor: MobilettoVisitor) {
-    logger.verbose(`mirrorDir: mirroring dir: ${sourcePath}`);
+    if (logger.isTraceEnabled()) logger.trace(`mirrorDir: mirroring dir: ${sourcePath}`);
     const listing = await source.list(sourcePath, { recursive: false, visitor });
     for (const obj of listing) {
         if (obj.type === M_DIR) {
@@ -65,7 +65,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 } else if (cached instanceof Error) {
                     throw cached;
                 } else {
-                    logger.warn(`list(${path}): unrecognized cached value (${cached})`);
+                    if (logger.isWarningEnabled()) logger.warn(`list(${path}): unrecognized cached value (${cached})`);
                 }
             }
             const recursive = opts && (opts === true || (opts.recursive ? opts.recursive : false));
@@ -90,14 +90,15 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 if (cache) {
                     cache.set(path, results).then(
                         () => {
-                            logger.debug(
-                                `list(${path}) cached ${
-                                    results ? results.length : `unknown? ${JSON.stringify(results)}`
-                                } results`
-                            );
+                            if (logger.isDebugEnabled())
+                                logger.debug(
+                                    `list(${path}) cached ${
+                                        results ? results.length : `unknown? ${JSON.stringify(results)}`
+                                    } results`
+                                );
                         },
                         (err: Error) => {
-                            logger.error(`list(${path}) error: ${err}`);
+                            if (logger.isErrorEnabled()) logger.error(`list(${path}) error: ${err}`);
                         }
                     );
                 }
@@ -106,10 +107,11 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                 if (cache && e instanceof MobilettoNotFoundError) {
                     cache.set(path, e).then(
                         () => {
-                            logger.debug(`list(${path}) cached error ${e}`);
+                            if (logger.isDebugEnabled()) logger.debug(`list(${path}) cached error ${e}`);
                         },
                         (err: Error) => {
-                            logger.error(`list(${path}) error ${err} caching MobilettoNotFoundError`);
+                            if (logger.isErrorEnabled())
+                                logger.error(`list(${path}) error ${err} caching MobilettoNotFoundError`);
                         }
                     );
                 }
@@ -151,10 +153,11 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             if (cache) {
                 cache.set(path, meta).then(
                     () => {
-                        logger.debug(`metadata(${path}) cached meta = ${JSON.stringify(meta)}`);
+                        if (logger.isDebugEnabled())
+                            logger.debug(`metadata(${path}) cached meta = ${JSON.stringify(meta)}`);
                     },
                     (err: Error) => {
-                        logger.error(`metadata(${path}) error: ${err}`);
+                        if (logger.isErrorEnabled()) logger.error(`metadata(${path}) error: ${err}`);
                     }
                 );
             }
@@ -209,7 +212,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             try {
                 return await client.readFile(path);
             } catch (e) {
-                logger.info(`safeReadFile(${path}) ${e}`);
+                if (logger.isInfoEnabled()) logger.info(`safeReadFile(${path}) ${e}`);
                 return Buffer.from("");
             }
         },
@@ -217,15 +220,15 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
     write:
         (client: MobilettoMinimalClient) =>
         async (path: string, data: MobilettoWriteSource): Promise<number> => {
-            logger.debug(`util.write(${path}) starting ...`);
+            if (logger.isDebugEnabled()) logger.debug(`util.write(${path}) starting ...`);
             const p = path.startsWith("/") ? path.substring(1) : path;
             if (p !== path) {
-                logger.debug(`util.write(${path}) removed leading /`);
+                if (logger.isDebugEnabled()) logger.debug(`util.write(${path}) removed leading /`);
             }
             // noinspection JSUnresolvedFunction
             const bytesWritten = await client.driver_write(p, data);
             await client.flush();
-            logger.debug(`util.write(${p}) wrote ${bytesWritten} bytes`);
+            if (logger.isDebugEnabled()) logger.debug(`util.write(${p}) wrote ${bytesWritten} bytes`);
             return bytesWritten;
         },
 
@@ -241,16 +244,18 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
     mirror:
         (client: MobilettoMinimalClient) =>
         async (source: MobilettoConnection, clientPath = "", sourcePath = ""): Promise<MobilettoMirrorResults> => {
-            logger.info(`mirror: starting, sourcePath=${sourcePath} -> clientPath=${clientPath}`);
+            if (logger.isInfoEnabled())
+                logger.info(`mirror: starting, sourcePath=${sourcePath} -> clientPath=${clientPath}`);
             const results: MobilettoMirrorResults = {
                 success: 0,
                 errors: 0,
             };
             const visitor = async (obj: MobilettoMetadata) => {
                 if (obj.type && obj.type === M_FILE) {
-                    logger.verbose(`mirror: mirroring file: ${obj.name}`);
+                    if (logger.isTraceEnabled()) logger.trace(`mirror: mirroring file: ${obj.name}`);
                     const tempPath = `${MOBILETTO_TMP}/mobiletto_${shasum(JSON.stringify(obj))}.${rand(10)}`;
-                    logger.debug(`mirror: writing ${obj.name} to temp file ${tempPath} ...`);
+                    if (logger.isDebugEnabled())
+                        logger.debug(`mirror: writing ${obj.name} to temp file ${tempPath} ...`);
                     const destName = obj.name.startsWith(sourcePath) ? obj.name.substring(sourcePath.length) : obj.name;
                     const destFullPath =
                         (clientPath.endsWith("/") ? clientPath : clientPath + "/") +
@@ -270,9 +275,10 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                         if (srcSize) {
                             const destMeta = await client.safeMetadata(destFullPath);
                             if (destMeta && destMeta.size && destMeta.size && destMeta.size === srcSize) {
-                                logger.info(
-                                    `mirror: dest object (${destFullPath}) has same size (${srcSize}) as src object ${sourcePath}, not copying`
-                                );
+                                if (logger.isInfoEnabled())
+                                    logger.info(
+                                        `mirror: dest object (${destFullPath}) has same size (${srcSize}) as src object ${sourcePath}, not copying`
+                                    );
                                 return;
                             }
                         }
@@ -294,9 +300,10 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                                             if (err) {
                                                 throw new MobilettoError(`mirror: error closing temp file: ${err}`);
                                             }
-                                            logger.debug(
-                                                `mirror: finished writing ${obj.name} to temp file ${tempPath}`
-                                            );
+                                            if (logger.isDebugEnabled())
+                                                logger.debug(
+                                                    `mirror: finished writing ${obj.name} to temp file ${tempPath}`
+                                                );
                                         });
                                     }
                                 )
@@ -304,27 +311,29 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
                                     // read from temp file -> write to mirror
                                     const fd = fs.openSync(tempPath, "r");
                                     const reader = fs.createReadStream(tempPath, { fd });
-                                    logger.debug(
-                                        `mirror: writing temp file ${tempPath} to destination: ${destFullPath}`
-                                    );
+                                    if (logger.isDebugEnabled())
+                                        logger.debug(
+                                            `mirror: writing temp file ${tempPath} to destination: ${destFullPath}`
+                                        );
                                     await client.write(destFullPath, reader);
-                                    logger.debug(
-                                        `mirror: finished writing temp file ${tempPath} to destination: ${destFullPath}`
-                                    );
+                                    if (logger.isDebugEnabled())
+                                        logger.debug(
+                                            `mirror: finished writing temp file ${tempPath} to destination: ${destFullPath}`
+                                        );
                                     results.success++;
                                     resolve(destFullPath);
                                 })
                                 .catch((e: Error) => {
-                                    logger.warn(`mirror: error copying file: ${e}`);
+                                    if (logger.isWarningEnabled()) logger.warn(`mirror: error copying file: ${e}`);
                                     results.errors++;
                                     reject(e);
                                 });
                         });
                     } catch (e) {
-                        logger.warn(`mirror: error copying file: ${e}`);
+                        if (logger.isWarningEnabled()) logger.warn(`mirror: error copying file: ${e}`);
                         results.errors++;
                     } finally {
-                        logger.verbose(`mirror: file mirrored successfully: ${obj.name}`);
+                        if (logger.isTraceEnabled()) logger.trace(`mirror: file mirrored successfully: ${obj.name}`);
                         fs.rmSync(tempPath, { force: true });
                     }
                 }
@@ -355,7 +364,7 @@ const CACHE_FUNCTIONS = {
         const redisConfig = client.redisConfig || {};
         const enabled = redisConfig.enabled !== false;
         if (!enabled) {
-            logger.info(`getCache: client.redisConfig.enabled === false, disabling cache`);
+            if (logger.isInfoEnabled()) logger.info(`getCache: client.redisConfig.enabled === false, disabling cache`);
             client.cache = DISABLED_CACHE;
             return client.cache;
         }
@@ -363,7 +372,8 @@ const CACHE_FUNCTIONS = {
         const port = redisConfig.port || parseInt(`${REDIS_PORT}`);
         const prefix = redisConfig.prefix || REDIS_PREFIX;
         if (!client.id) {
-            logger.warn(`getCache: client.id not set; all nameless connections will share one cache`);
+            if (logger.isWarningEnabled())
+                logger.warn(`getCache: client.id not set; all nameless connections will share one cache`);
             client.cache = getRedis("~nameless~", host, port, prefix);
         } else {
             client.cache = getRedis(client.id, host, port, prefix);
@@ -384,7 +394,8 @@ const CACHE_FUNCTIONS = {
 function utilityFunctionConflict(client: MobilettoPatchable, func: string): boolean {
     if (typeof client[func] === "function") {
         if (typeof client[`driver_${func}`] !== "undefined") {
-            logger.warn(`utilityFunctionConflict: driver_${func} has already been added`);
+            if (logger.isWarningEnabled())
+                logger.warn(`utilityFunctionConflict: driver_${func} has already been added`);
             return false;
         } else {
             client[`driver_${func}`] = client[func]; // save original driver function
@@ -404,7 +415,7 @@ export const addUtilityFunctions = (client: MobilettoMinimalClient, readOnly = f
     if (readOnly) {
         for (const writeFunc of ["write", "remove", "writeFile"]) {
             client[writeFunc] = async () => {
-                logger.warn(`${writeFunc} not supported in readOnly mode`);
+                if (logger.isWarningEnabled()) logger.warn(`${writeFunc} not supported in readOnly mode`);
                 return false;
             };
         }
@@ -414,11 +425,12 @@ export const addUtilityFunctions = (client: MobilettoMinimalClient, readOnly = f
 
 export const addCacheFunctions = (client: MobilettoMinimalClient) =>
     addClientFunctions(client, CACHE_FUNCTIONS, (client: MobilettoPatchable, func: string): boolean => {
-        logger.warn(
-            `addCacheFunctions: ${func} already exists on client${
-                client.id ? `(client.id=${client.id})` : ""
-            }, not re-adding`
-        );
+        if (logger.isWarningEnabled())
+            logger.warn(
+                `addCacheFunctions: ${func} already exists on client${
+                    client.id ? `(client.id=${client.id})` : ""
+                }, not re-adding`
+            );
         return false;
     });
 

@@ -59,7 +59,7 @@ export async function mobiletto(
     opts?: MobilettoOptions | null,
     encryption?: MobilettoEncryptionSettings
 ): Promise<MobilettoConnection> {
-    logger.info(`mobiletto: connecting with driver ${driverPath}`);
+    if (logger.isInfoEnabled()) logger.info(`mobiletto: connecting with driver ${driverPath}`);
     let driver;
     if (typeof driverPath === "string") {
         if (ALL_DRIVERS[driverPath]) {
@@ -85,7 +85,7 @@ export async function mobiletto(
         client = driver.storageClient(key, secret || undefined, opts || undefined);
     } catch (e) {
         const message = `mobiletto(${driverPath}) error initializing driver: ${e}`;
-        logger.error(message);
+        if (logger.isErrorEnabled()) logger.error(message);
         throw new MobilettoError(message);
     }
     let configValue = null;
@@ -93,12 +93,12 @@ export async function mobiletto(
         configValue = await client.testConfig();
     } catch (e) {
         const message = `mobiletto(${driverPath}) error testing connection: ${e}`;
-        logger.error(message);
+        if (logger.isErrorEnabled()) logger.error(message);
         throw new MobilettoError(message);
     }
     if (!configValue) {
         const message = `mobiletto(${driverPath}) error: test API call failed`;
-        logger.error(message);
+        if (logger.isErrorEnabled()) logger.error(message);
         throw new MobilettoError(message);
     }
     const readOnly = opts ? !!opts.readOnly : false;
@@ -116,9 +116,10 @@ export async function mobiletto(
     }
     client.queueWorkers = [];
     if (!encryption) {
-        logger.info(
-            `mobiletto: successfully connected using driver ${driverPath}, returning client (encryption not enabled)`
-        );
+        if (logger.isInfoEnabled())
+            logger.info(
+                `mobiletto: successfully connected using driver ${driverPath}, returning client (encryption not enabled)`
+            );
         return addUtilityFunctions(addCacheFunctions(client), readOnly);
     }
 
@@ -127,13 +128,13 @@ export async function mobiletto(
     const encKey = normalizeKey(encryption.key);
     if (!encKey) {
         const message = `mobiletto(${driverPath}) invalid encryption key`;
-        logger.error(message);
+        if (logger.isErrorEnabled()) logger.error(message);
         throw new MobilettoError(message);
     }
     const iv = normalizeIV(encryption.iv, encKey);
     if (!iv) {
         const message = `mobiletto(${driverPath}) invalid encryption IV`;
-        logger.error(message);
+        if (logger.isErrorEnabled()) logger.error(message);
         throw new MobilettoError(message);
     }
     const dirLevels: number = encryption.dirLevels || DEFAULT_DIR_LEVELS;
@@ -205,10 +206,11 @@ export async function mobiletto(
         if (cache) {
             cache.set(path, finalMeta).then(
                 () => {
-                    logger.debug(`_metadata(${path}) cached meta = ${JSON.stringify(finalMeta)}`);
+                    if (logger.isDebugEnabled())
+                        logger.debug(`_metadata(${path}) cached meta = ${JSON.stringify(finalMeta)}`);
                 },
                 (err: Error) => {
-                    logger.error(`_metadata(${path}) error: ${err}`);
+                    if (logger.isErrorEnabled()) logger.error(`_metadata(${path}) error: ${err}`);
                 }
             );
         }
@@ -225,7 +227,7 @@ export async function mobiletto(
                 .read(dirent + "/" + basename(entry.name), reader(cipherText))
                 .then((bytesRead) => {
                     if (!bytesRead) {
-                        logger.warn(`${logPrefix} returned no data`);
+                        if (logger.isWarningEnabled()) logger.warn(`${logPrefix} returned no data`);
                         resolve("null");
                     } else {
                         const plain = decrypt(cipherText.toString(), enc);
@@ -242,7 +244,7 @@ export async function mobiletto(
                             })
                             .catch((err) => {
                                 const message = `${logPrefix} error fetching _metadata: ${err}`;
-                                logger.warn(message);
+                                if (logger.isWarningEnabled()) logger.warn(message);
                                 if (
                                     job.data.mobilettoJobID &&
                                     typeof META_ERR_HANDLERS[job.data.mobilettoJobID] === "function"
@@ -255,7 +257,7 @@ export async function mobiletto(
                 })
                 .catch((err) => {
                     const message = `${logPrefix} error reading file: ${err}`;
-                    logger.warn(message);
+                    if (logger.isWarningEnabled()) logger.warn(message);
                     reject(message);
                 });
         });
@@ -269,7 +271,7 @@ export async function mobiletto(
         if (!client.mq) {
             if (!client.redisConfig) {
                 const message = "metaLoadQueue: redis is required but not enabled";
-                logger.error(message);
+                if (logger.isErrorEnabled()) logger.error(message);
                 throw new MobilettoError(message);
             }
             const port: number = client.redisConfig.port || parseInt(`${REDIS_PORT}`);
@@ -290,13 +292,14 @@ export async function mobiletto(
 
             const events = new QueueEvents(queueName, queueOptions);
             events.on("completed", ({ jobId, returnvalue }): void => {
-                logger.info(`${jobName} completed job ${jobId} with result: ${returnvalue}`);
+                if (logger.isInfoEnabled())
+                    logger.info(`${jobName} completed job ${jobId} with result: ${returnvalue}`);
                 if (META_HANDLERS[jobId]) {
                     META_HANDLERS[jobId](JSON.parse(returnvalue));
                 }
             });
             events.on("failed", ({ jobId, failedReason }): void => {
-                logger.info(`${jobName} failed job ${jobId} with result: ${failedReason}`);
+                if (logger.isInfoEnabled()) logger.info(`${jobName} failed job ${jobId} with result: ${failedReason}`);
                 if (META_ERR_HANDLERS[jobId]) {
                     META_ERR_HANDLERS[jobId](failedReason);
                 }
@@ -322,7 +325,7 @@ export async function mobiletto(
         const mq = metaLoadQueue();
         META_HANDLERS[mobilettoJobID] = (meta: MobilettoMetadata) => files.push(meta);
         META_ERR_HANDLERS[mobilettoJobID] = (failedReason) => {
-            logger.error(`_loadMeta(${dirent}): error: ${failedReason}`);
+            if (logger.isErrorEnabled()) logger.error(`_loadMeta(${dirent}): error: ${failedReason}`);
         };
         for (const entry of entries) {
             const job = { mobilettoJobID, dirent, entry };
@@ -339,13 +342,15 @@ export async function mobiletto(
         const recursive = false;
         const quiet = true;
 
-        logger.debug(`removeDirentFile(${path}) removing df=${df}`);
+        if (logger.isDebugEnabled()) logger.debug(`removeDirentFile(${path}) removing df=${df}`);
         await client.remove(df, recursive, quiet);
 
-        logger.debug(`removeDirentFile(${path}) removing encryptPath(path)=${encryptPath(path)}`);
+        if (logger.isDebugEnabled())
+            logger.debug(`removeDirentFile(${path}) removing encryptPath(path)=${encryptPath(path)}`);
         await client.remove(encryptPath(path), recursive, quiet);
 
-        logger.debug(`removeDirentFile(${path}) removing metaPath(path)=${metaPath(path)}`);
+        if (logger.isDebugEnabled())
+            logger.debug(`removeDirentFile(${path}) removing metaPath(path)=${metaPath(path)}`);
         await client.remove(metaPath(path), recursive, quiet);
     }
 
@@ -378,10 +383,10 @@ export async function mobiletto(
                 if (cache) {
                     cache.set(cacheKey, thing).then(
                         () => {
-                            logger.debug(`enc_list: cached ${p} r=${recursive}`);
+                            if (logger.isDebugEnabled()) logger.debug(`enc_list: cached ${p} r=${recursive}`);
                         },
                         (err: Error) => {
-                            logger.error(`enc_list(${p}) error: ${err}`);
+                            if (logger.isErrorEnabled()) logger.error(`enc_list(${p}) error: ${err}`);
                         }
                     );
                 }
@@ -402,10 +407,10 @@ export async function mobiletto(
                     if (visitor) {
                         await visitor(found);
                     }
-                    logger.debug(`tryParentDirForSingleFile(${p}) found ${found.name}`);
+                    if (logger.isDebugEnabled()) logger.debug(`tryParentDirForSingleFile(${p}) found ${found.name}`);
                     return cacheAndReturn([found]);
                 }
-                logger.debug(`tryParentDirForSingleFile(${p}) nothing found! e=${e}`);
+                if (logger.isDebugEnabled()) logger.debug(`tryParentDirForSingleFile(${p}) nothing found! e=${e}`);
                 throw e ? new MobilettoNotFoundError(p) : e;
             }
 
@@ -449,10 +454,10 @@ export async function mobiletto(
                     if (cache) {
                         cache.set(cacheKey, entries).then(
                             () => {
-                                logger.debug(`enc_list: cached ${p} r=${recursive}`);
+                                if (logger.isDebugEnabled()) logger.debug(`enc_list: cached ${p} r=${recursive}`);
                             },
                             (err: Error) => {
-                                logger.error(`enc_list(${p}) error: ${err}`);
+                                if (logger.isErrorEnabled()) logger.error(`enc_list(${p}) error: ${err}`);
                             }
                         );
                     }
@@ -467,10 +472,10 @@ export async function mobiletto(
             if (cache) {
                 cache.set(cacheKey, entries).then(
                     () => {
-                        logger.debug(`enc_list: cached ${p} r=${recursive}`);
+                        if (logger.isDebugEnabled()) logger.debug(`enc_list: cached ${p} r=${recursive}`);
                     },
                     (err: Error) => {
-                        logger.error(`enc_list(${p}) error: ${err}`);
+                        if (logger.isErrorEnabled()) logger.error(`enc_list(${p}) error: ${err}`);
                     }
                 );
             }
@@ -554,7 +559,7 @@ export async function mobiletto(
             options?: MobilettoRemoveOptions | boolean,
             quiet?: boolean
         ): Promise<string[] | string> => {
-            logger.debug(`enc.remove(${path}) starting`);
+            if (logger.isDebugEnabled()) logger.debug(`enc.remove(${path}) starting`);
             const recursive = options === true || (options && options.recursive) || false;
             quiet ||= (options && typeof options !== "boolean" && options.quiet) || false;
             if (recursive) {
@@ -568,7 +573,8 @@ export async function mobiletto(
                         entries = await client.list(dirent);
                     } catch (e) {
                         if (quiet) {
-                            logger.warn(`list(${path}): error listing files for recursive deletion: ${e}`);
+                            if (logger.isWarningEnabled())
+                                logger.warn(`list(${path}): error listing files for recursive deletion: ${e}`);
                         } else {
                             if (!(e instanceof MobilettoNotFoundError)) {
                                 throw e instanceof MobilettoError
@@ -624,7 +630,10 @@ export async function mobiletto(
             return path;
         },
     };
-    logger.info(`mobiletto: successfully connected using driver ${driverPath}, returning client (encryption enabled)`);
+    if (logger.isInfoEnabled())
+        logger.info(
+            `mobiletto: successfully connected using driver ${driverPath}, returning client (encryption enabled)`
+        );
     return addUtilityFunctions(addCacheFunctions(encClient), readOnly);
 }
 

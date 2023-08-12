@@ -25,7 +25,8 @@ export const ALL_DRIVERS: Record<string, MobilettoDriver> = {};
 
 export const registerDriver = (name: string, driver: MobilettoDriverParameter): MobilettoDriver => {
     if (ALL_DRIVERS[name]) {
-        logger.warn(`registerDriver(${name}): driver already registered, not re-registering`);
+        if (logger.isWarningEnabled())
+            logger.warn(`registerDriver(${name}): driver already registered, not re-registering`);
     } else {
         if (typeof driver === "object" && typeof driver.storageClient === "function") {
             ALL_DRIVERS[name] = driver;
