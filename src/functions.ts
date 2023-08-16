@@ -76,31 +76,33 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             try {
                 // noinspection JSUnresolvedFunction
                 const results: MobilettoMetadata[] = await client.driver_list(path, recursive, visitor);
-                if (results.length === 0 && isFlagEnabled(client, "list_tryMetaIfEmpty")) {
-                    // try single meta, is this a file?
-                    try {
-                        const singleFileMeta = await client.driver_metadata(path);
-                        if (singleFileMeta) {
-                            results.push(singleFileMeta);
+                if (results) {
+                    if (results.length === 0 && isFlagEnabled(client, "list_tryMetaIfEmpty")) {
+                        // try single meta, is this a file?
+                        try {
+                            const singleFileMeta = await client.driver_metadata(path);
+                            if (singleFileMeta) {
+                                results.push(singleFileMeta);
+                            }
+                        } catch (sfmErrIgnored) {
+                            // ignore error, we tried
                         }
-                    } catch (sfmErrIgnored) {
-                        // ignore error, we tried
                     }
-                }
-                if (cache) {
-                    cache.set(path, results).then(
-                        () => {
-                            if (logger.isDebugEnabled())
-                                logger.debug(
-                                    `list(${path}) cached ${
-                                        results ? results.length : `unknown? ${JSON.stringify(results)}`
-                                    } results`
-                                );
-                        },
-                        (err: Error) => {
-                            if (logger.isErrorEnabled()) logger.error(`list(${path}) error: ${err}`);
-                        }
-                    );
+                    if (cache) {
+                        cache.set(path, results).then(
+                            () => {
+                                if (logger.isDebugEnabled())
+                                    logger.debug(
+                                        `list(${path}) cached ${
+                                            results ? results.length : `unknown? ${JSON.stringify(results)}`
+                                        } results`
+                                    );
+                            },
+                            (err: Error) => {
+                                if (logger.isErrorEnabled()) logger.error(`list(${path}) error: ${err}`);
+                            }
+                        );
+                    }
                 }
                 return results;
             } catch (e) {
