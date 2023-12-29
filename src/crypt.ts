@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import shasum from "shasum";
+import { sha256 } from "zilla-util";
 import { BinaryLike } from "crypto";
 
 const WARN_PLAINTEXT = !process.env.IGNORE_DISABLED_ENCRYPTION;
@@ -25,7 +25,7 @@ export type MobilettoEncryptionConfig = {
     metaWorkers: number;
 };
 
-const sha = (val: string | Buffer) => shasum(val, "SHA256");
+const sha = sha256;
 
 export const normalizeKey = (k: string): Buffer | null =>
     typeof k === "string" && k.trim().length > MIN_KEY_LEN ? Buffer.from(sha(k.trim())).subarray(0, 32) : null;

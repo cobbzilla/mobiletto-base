@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { basename, dirname } from "path";
-import shasum from "shasum";
+import { sha256 } from "zilla-util";
 import { Transform } from "stream";
 import { Job, Queue, QueueEvents, Worker } from "bullmq";
 
@@ -108,7 +108,7 @@ export async function mobiletto(
     }
 
     const internalIdForDriver = () =>
-        driverPath + "_" + shasum(`${key}\n${JSON.stringify(opts)}\n${encryption ? JSON.stringify(encryption) : ""}`);
+        driverPath + "_" + sha256(`${key}\n${JSON.stringify(opts)}\n${encryption ? JSON.stringify(encryption) : ""}`);
 
     // If the driver didn't give the client a name, generate a unique internal name
     if (!client.id) {
@@ -149,7 +149,7 @@ export async function mobiletto(
         metaWorkers,
     };
     function encryptPath(path: string) {
-        const encrypted = shasum(enc.key + " " + path);
+        const encrypted = sha256(enc.key + " " + path);
         let newPath = "";
         for (let i = 0; i <= dirLevels; i++) {
             if (newPath.length > 0) newPath += "/";
@@ -159,7 +159,7 @@ export async function mobiletto(
     }
     const metaPath = (path: string) => encryptPath(path + " ~ META");
     const direntDir = (dir: string) => encryptPath(dir + DIR_ENT_DIR_SUFFIX);
-    const direntFile = (dirent: string, path: string) => dirent + "/" + shasum(DIR_ENT_FILE_PREFIX + " " + path);
+    const direntFile = (dirent: string, path: string) => dirent + "/" + sha256(DIR_ENT_FILE_PREFIX + " " + path);
 
     const outerClient = addCacheFunctions(client);
     const _metadata = (client: MobilettoMinimalClient) => async (path: string) => {
