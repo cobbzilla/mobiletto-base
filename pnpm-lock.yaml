@@ -21,11 +21,11 @@ dependencies:
     specifier: ^3.3.1
     version: 3.3.1
   node-redis-scan:
-    specifier: ^1.3.6
-    version: 1.3.6
+    specifier: ^1.3.7
+    version: 1.3.7
   zilla-util:
-    specifier: ^1.0.15
-    version: 1.0.15
+    specifier: ^1.0.39
+    version: 1.0.39
 
 devDependencies:
   '@types/chai':
@@ -1226,8 +1226,8 @@ packages:
     dev: false
     optional: true
 
-  /node-redis-scan@1.3.6:
-    resolution: {integrity: sha512-Odg11erqUMCtCB+i3CRcXCutud1ir4cD2815TTC67q4mjT6nQJWxIK83YnYjulKLxtOsRjA+fFH80UFFG5bywA==}
+  /node-redis-scan@1.3.7:
+    resolution: {integrity: sha512-f6kK0/zVN5JPI3G4pChWKRnv0SB9thB7o5wG733mzu7mFU34HUO5olBHDQ0QWxwiSsb8/OSfEyULIIms1SWXig==}
     engines: {node: '>= 10.12.0'}
     dev: false
 
@@ -1587,6 +1587,6 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /zilla-util@1.0.15:
-    resolution: {integrity: sha512-007ag3Np+qp1gI4CiFqwYoIiJR9xUhGtGn1AjRUg+VgAY7f+U10qkwAXWckZ0S/F8gnzMRgAK1yiC9I6HBoDkQ==}
+  /zilla-util@1.0.39:
+    resolution: {integrity: sha512-dW41WaSlZ18iafgD+Bllcmuk63wr1vW2N6m2GMOh1ERrNHulpYxbCjOS5XuTJgR5YKAWoQZHr+M1hGCd3TGiUA==}
     dev: false
