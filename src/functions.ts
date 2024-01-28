@@ -14,7 +14,7 @@ import {
 } from "mobiletto-common";
 import { MobilettoClient, MobilettoConnection } from "./types.js";
 import { logger, M_DIR, M_FILE, MobilettoError, MobilettoNotFoundError, rand } from "mobiletto-common";
-import shasum from "shasum";
+import { sha256 } from "zilla-util";
 import fs from "fs";
 import { Worker } from "bullmq";
 import { AwaitableLRU, CacheLike, DISABLED_CACHE } from "./cache.js";
@@ -46,6 +46,8 @@ export const isFlagEnabled = (
 };
 
 const READ_FILE_CACHE_SIZE_THRESHOLD = 128 * 1024; // we can cache files of this size
+
+const EMPTY_BUFFER = Buffer.from([]);
 
 // noinspection JSUnusedGlobalSymbols,JSUnresolvedFunction
 const UTILITY_FUNCTIONS: MobilettoFunctions = {
@@ -243,6 +245,65 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             return await client.write(path, readFunc());
         },
 
+    copyFile:
+        (client: MobilettoMinimalClient) =>
+        async (sourcePath: string, destPath: string, source?: MobilettoMinimalClient) => {
+            // The data buffer
+            const dataBuffer: (Buffer | undefined)[] = [];
+            let done = false;
+
+            const readData = (connection: MobilettoMinimalClient, path: string) => {
+                return connection.read(
+                    path,
+                    (chunk: Buffer) => {
+                        dataBuffer.push(chunk);
+                    },
+                    () => {
+                        done = true;
+                        dataBuffer.push(undefined);
+                    }
+                );
+            };
+
+            const createReadStream = function* (): Generator<Buffer, void, unknown> {
+                while (!done) {
+                    if (dataBuffer.length > 0) {
+                        const chunk = dataBuffer.shift();
+                        if (chunk) {
+                            yield chunk;
+                        } else {
+                            // the underlying driver "write" expects null or undefined to be yielded
+                            // when the end of stream is reached, so this is ok
+                            yield null as unknown as Buffer;
+                        }
+                    } else {
+                        yield EMPTY_BUFFER;
+                    }
+                }
+            };
+
+            const readStream = createReadStream();
+
+            // Reading and writing data
+            const copyData = async () => {
+                const readPromise = readData(source || client, sourcePath);
+                const writePromise = client.write(destPath, readStream);
+                const resolved = await Promise.all([readPromise, writePromise]);
+
+                const bytesRead = resolved[0];
+                const bytesWritten = resolved[1];
+                if (bytesRead !== bytesWritten) {
+                    throw new MobilettoError(
+                        `copyFile(${sourcePath}, ${destPath}): bytes read ${bytesRead} !== ${bytesWritten} bytes written`
+                    );
+                }
+                console.log(`copied ${bytesRead} bytes from ${sourcePath} to ${destPath}`);
+                return bytesRead;
+            };
+
+            return await copyData();
+        },
+
     mirror:
         (client: MobilettoMinimalClient) =>
         async (source: MobilettoConnection, clientPath = "", sourcePath = ""): Promise<MobilettoMirrorResults> => {
@@ -255,7 +316,7 @@ const UTILITY_FUNCTIONS: MobilettoFunctions = {
             const visitor = async (obj: MobilettoMetadata) => {
                 if (obj.type && obj.type === M_FILE) {
                     if (logger.isTraceEnabled()) logger.trace(`mirror: mirroring file: ${obj.name}`);
-                    const tempPath = `${MOBILETTO_TMP}/mobiletto_${shasum(JSON.stringify(obj))}.${rand(10)}`;
+                    const tempPath = `${MOBILETTO_TMP}/mobiletto_${sha256(JSON.stringify(obj))}.${rand(10)}`;
                     if (logger.isDebugEnabled())
                         logger.debug(`mirror: writing ${obj.name} to temp file ${tempPath} ...`);
                     const destName = obj.name.startsWith(sourcePath) ? obj.name.substring(sourcePath.length) : obj.name;
